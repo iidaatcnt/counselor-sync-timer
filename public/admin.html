@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer - 管理者</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .admin-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .timer-label {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .timer-value {
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .total-timer {
+            margin-bottom: 3rem;
+        }
+
+        .total-timer .timer-value {
+            color: #FFD700;
+            font-size: 5rem;
+        }
+
+        .session-timer .timer-value {
+            color: #87CEEB;
+            font-size: 4rem;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .control-button {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .control-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            background: linear-gradient(45deg, #40c057, #37b24d);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .pause-btn {
+            background: linear-gradient(45deg, #ff8cc8, #ff6b9d);
+            color: white;
+        }
+
+        .pause-btn:hover:not(:disabled) {
+            background: linear-gradient(45deg, #ff6b9d, #ff5085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff5252);
+            color: white;
+        }
+
+        .reset-btn:hover:not(:disabled) {
+            background: linear-gradient(45deg, #ff5252, #ff4757);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            color: white;
+        }
+
+        .next-btn:hover:not(:disabled) {
+            background: linear-gradient(45deg, #0984e3, #2d3436);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .control-button:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            opacity: 0.8;
+        }
+
+        .paused {
+            color: #ff6b6b;
+        }
+
+        .running {
+            color: #51cf66;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: rgba(81, 207, 102, 0.8);
+            color: white;
+        }
+
+        .disconnected {
+            background: rgba(255, 107, 107, 0.8);
+            color: white;
+        }
+
+        .loading {
+            background: rgba(255, 193, 7, 0.8);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status loading" id="connectionStatus">データ取得中...</div>
+    
+    <div class="container">
+        <h1>SessionTimer</h1>
+        <div class="admin-badge">管理者モード</div>
+        
+        <div class="timer-display total-timer">
+            <div class="timer-label">全体タイマー</div>
+            <div class="timer-value" id="totalTimer">02:00:00</div>
+        </div>
+        
+        <div class="timer-display session-timer">
+            <div class="timer-label">セッションタイマー</div>
+            <div class="timer-value" id="sessionTimer">20:00</div>
+        </div>
+        
+        <div class="control-panel">
+            <h3>タイマー操作</h3>
+            <div class="button-group">
+                <button class="control-button start-btn" id="startBtn">Start</button>
+                <button class="control-button pause-btn" id="pauseBtn">Pause</button>
+                <button class="control-button reset-btn" id="resetBtn">Reset</button>
+                <button class="control-button next-btn" id="nextBtn">Next</button>
+            </div>
+            
+            <div class="status">
+                ステータス: <span id="statusText">データ取得中...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const totalTimerElement = document.getElementById('totalTimer');
+        const sessionTimerElement = document.getElementById('sessionTimer');
+        const statusElement = document.getElementById('statusText');
+        const connectionStatusElement = document.getElementById('connectionStatus');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        let isConnected = false;
+        let pollInterval = null;
+        
+        // ボタンの有効/無効を制御
+        function setButtonsEnabled(enabled) {
+            startBtn.disabled = !enabled;
+            pauseBtn.disabled = !enabled;
+            resetBtn.disabled = !enabled;
+            nextBtn.disabled = !enabled;
+        }
+        
+        // タイマー状態を取得する関数
+        async function fetchTimerState() {
+            try {
+                const response = await fetch('/api/timer');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 接続状態を更新
+                if (!isConnected) {
+                    isConnected = true;
+                    connectionStatusElement.textContent = '接続済み';
+                    connectionStatusElement.className = 'connection-status connected';
+                    setButtonsEnabled(true);
+                }
+                
+                // タイマー表示の更新
+                totalTimerElement.textContent = data.totalTimeFormatted;
+                sessionTimerElement.textContent = data.sessionTimeFormatted;
+                
+                // ステータス表示の更新
+                if (data.isPaused) {
+                    statusElement.textContent = '一時停止中';
+                    statusElement.className = 'paused';
+                } else {
+                    statusElement.textContent = '実行中';
+                    statusElement.className = 'running';
+                }
+                
+                // タイマーが0になった場合の視覚的フィードバック
+                if (data.totalTime === 0) {
+                    totalTimerElement.style.color = '#ff6b6b';
+                    totalTimerElement.style.animation = 'blink 1s infinite';
+                } else {
+                    totalTimerElement.style.color = '#FFD700';
+                    totalTimerElement.style.animation = 'none';
+                }
+                
+                if (data.sessionTime === 0) {
+                    sessionTimerElement.style.color = '#ff6b6b';
+                    sessionTimerElement.style.animation = 'blink 1s infinite';
+                } else {
+                    sessionTimerElement.style.color = '#87CEEB';
+                    sessionTimerElement.style.animation = 'none';
+                }
+                
+                console.log('タイマー状態を更新:', data);
+                
+            } catch (error) {
+                console.error('タイマー状態の取得に失敗:', error);
+                
+                // 接続エラー状態を更新
+                if (isConnected) {
+                    isConnected = false;
+                    connectionStatusElement.textContent = '接続エラー';
+                    connectionStatusElement.className = 'connection-status disconnected';
+                    statusElement.textContent = '接続エラー';
+                    statusElement.className = 'paused';
+                    setButtonsEnabled(false);
+                }
+            }
+        }
+        
+        // API呼び出し共通関数
+        async function callTimerAPI(endpoint, action) {
+            try {
+                setButtonsEnabled(false);
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log(`${action}成功:`, data);
+                
+                // 即座に状態を更新
+                fetchTimerState();
+                
+            } catch (error) {
+                console.error(`${action}に失敗:`, error);
+                alert(`${action}に失敗しました: ${error.message}`);
+            } finally {
+                setTimeout(() => setButtonsEnabled(isConnected), 500);
+            }
+        }
+        
+        // ボタンイベントハンドラー
+        startBtn.addEventListener('click', () => {
+            console.log('Startボタンが押されました');
+            callTimerAPI('/api/timer/start', 'タイマー開始');
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            console.log('Pauseボタンが押されました');
+            callTimerAPI('/api/timer/pause', 'タイマー一時停止');
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            if (confirm('タイマーをリセットしますか？')) {
+                console.log('Resetボタンが押されました');
+                callTimerAPI('/api/timer/reset', 'タイマーリセット');
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (confirm('次のセッションに進みますか？')) {
+                console.log('Nextボタンが押されました');
+                callTimerAPI('/api/timer/next', '次のセッション');
+            }
+        });
+        
+        // 定期的にタイマー状態を取得
+        function startPolling() {
+            fetchTimerState();
+            pollInterval = setInterval(fetchTimerState, 1000);
+        }
+        
+        // ポーリング停止
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+        
+        // 点滅アニメーション
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0.3; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // ページ読み込み時にポーリング開始
+        document.addEventListener('DOMContentLoaded', () => {
+            setButtonsEnabled(false);
+            startPolling();
+        });
+        
+        // ページが閉じられる時にポーリング停止
+        window.addEventListener('beforeunload', stopPolling);
+    </script>
+</body>
+</html>

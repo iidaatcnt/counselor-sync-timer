@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer - 閲覧者</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .timer-label {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .timer-value {
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .total-timer {
+            margin-bottom: 3rem;
+        }
+
+        .total-timer .timer-value {
+            color: #FFD700;
+            font-size: 5rem;
+        }
+
+        .session-timer .timer-value {
+            color: #87CEEB;
+            font-size: 4rem;
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            opacity: 0.8;
+        }
+
+        .paused {
+            color: #ff6b6b;
+        }
+
+        .running {
+            color: #51cf66;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: rgba(81, 207, 102, 0.8);
+            color: white;
+        }
+
+        .disconnected {
+            background: rgba(255, 107, 107, 0.8);
+            color: white;
+        }
+
+        .loading {
+            background: rgba(255, 193, 7, 0.8);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status loading" id="connectionStatus">データ取得中...</div>
+    
+    <div class="container">
+        <h1>SessionTimer</h1>
+        
+        <div class="timer-display total-timer">
+            <div class="timer-label">全体タイマー</div>
+            <div class="timer-value" id="totalTimer">02:00:00</div>
+        </div>
+        
+        <div class="timer-display session-timer">
+            <div class="timer-label">セッションタイマー</div>
+            <div class="timer-value" id="sessionTimer">20:00</div>
+        </div>
+        
+        <div class="status" id="status">
+            <span id="statusText">データ取得中...</span>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const totalTimerElement = document.getElementById('totalTimer');
+        const sessionTimerElement = document.getElementById('sessionTimer');
+        const statusElement = document.getElementById('statusText');
+        const connectionStatusElement = document.getElementById('connectionStatus');
+        
+        let isConnected = false;
+        let pollInterval = null;
+        
+        // タイマー状態を取得する関数
+        async function fetchTimerState() {
+            try {
+                const response = await fetch('/api/timer');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 接続状態を更新
+                if (!isConnected) {
+                    isConnected = true;
+                    connectionStatusElement.textContent = '接続済み';
+                    connectionStatusElement.className = 'connection-status connected';
+                }
+                
+                // タイマー表示の更新
+                totalTimerElement.textContent = data.totalTimeFormatted;
+                sessionTimerElement.textContent = data.sessionTimeFormatted;
+                
+                // ステータス表示の更新
+                if (data.isPaused) {
+                    statusElement.textContent = '一時停止中';
+                    statusElement.className = 'paused';
+                } else {
+                    statusElement.textContent = '実行中';
+                    statusElement.className = 'running';
+                }
+                
+                // タイマーが0になった場合の視覚的フィードバック
+                if (data.totalTime === 0) {
+                    totalTimerElement.style.color = '#ff6b6b';
+                    totalTimerElement.style.animation = 'blink 1s infinite';
+                } else {
+                    totalTimerElement.style.color = '#FFD700';
+                    totalTimerElement.style.animation = 'none';
+                }
+                
+                if (data.sessionTime === 0) {
+                    sessionTimerElement.style.color = '#ff6b6b';
+                    sessionTimerElement.style.animation = 'blink 1s infinite';
+                } else {
+                    sessionTimerElement.style.color = '#87CEEB';
+                    sessionTimerElement.style.animation = 'none';
+                }
+                
+                console.log('タイマー状態を更新:', data);
+                
+            } catch (error) {
+                console.error('タイマー状態の取得に失敗:', error);
+                
+                // 接続エラー状態を更新
+                if (isConnected) {
+                    isConnected = false;
+                    connectionStatusElement.textContent = '接続エラー';
+                    connectionStatusElement.className = 'connection-status disconnected';
+                    statusElement.textContent = '接続エラー';
+                    statusElement.className = 'paused';
+                }
+            }
+        }
+        
+        // 定期的にタイマー状態を取得
+        function startPolling() {
+            fetchTimerState();
+            pollInterval = setInterval(fetchTimerState, 1000);
+        }
+        
+        // ポーリング停止
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+        
+        // 点滅アニメーション
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0.3; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // ページ読み込み時にポーリング開始
+        document.addEventListener('DOMContentLoaded', startPolling);
+        
+        // ページが閉じられる時にポーリング停止
+        window.addEventListener('beforeunload', stopPolling);
+    </script>
+</body>
+</html>
