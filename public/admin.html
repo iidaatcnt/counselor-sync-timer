@@ -12,320 +12,361 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            color: white;
             padding: 20px;
         }
 
         .container {
             text-align: center;
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
         }
 
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 2rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 2.5rem;
             font-weight: 300;
-            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .admin-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+            color: #ffd700;
         }
 
-        .timer-display {
-            background: rgba(255, 255, 255, 0.1);
+        .timer-section {
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
 
         .timer-label {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .timer-value {
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            margin-bottom: 0.5rem;
-        }
-
-        /* セッションタイマー（最重要・上部・大きく） */
-        .session-timer {
-            margin-bottom: 3rem;
-            border: 3px solid #FFD700;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .session-timer .timer-label {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #FFD700;
-        }
-
-        .session-timer .timer-value {
-            color: #FFD700;
-            font-size: 5rem;
-        }
-
-        /* 全体タイマー（下部・小さく） */
-        .total-timer .timer-label {
             font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            opacity: 0.9;
         }
 
-        .total-timer .timer-value {
-            color: #E1BEE7;
-            font-size: 3rem;
-        }
-
-        .control-panel {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-top: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .control-panel h3 {
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
+        .timer-display {
+            font-size: 4rem;
             font-weight: 300;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.1em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            min-height: 5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
         }
 
-        .button-group {
+        .timer-display.warning {
+            color: #ff6b6b;
+            animation: pulse 1s infinite;
+        }
+
+        .timer-display.critical {
+            color: #ff4757;
+            animation: blink 0.5s infinite;
+        }
+
+        .control-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .control-title {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .controls {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .control-button {
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border: none;
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 15px 20px;
             border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .control-button:disabled {
-            opacity: 0.6;
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
-            transform: none !important;
+            transform: none;
         }
 
-        .start-btn {
-            background: linear-gradient(45deg, #51cf66, #40c057);
-            color: white;
+        .btn.start {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-color: #4CAF50;
         }
 
-        .start-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #40c057, #37b24d);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        .btn.pause {
+            background: linear-gradient(45deg, #ff9800, #e68900);
+            border-color: #ff9800;
         }
 
-        .pause-btn {
-            background: linear-gradient(45deg, #ff8cc8, #ff6b9d);
-            color: white;
+        .btn.reset {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            border-color: #f44336;
         }
 
-        .pause-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #ff6b9d, #ff5085);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-
-        .reset-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ff5252);
-            color: white;
-        }
-
-        .reset-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #ff5252, #ff4757);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-
-        .next-btn {
-            background: linear-gradient(45deg, #74b9ff, #0984e3);
-            color: white;
-        }
-
-        .next-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #0984e3, #2d3436);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-
-        .control-button:active:not(:disabled) {
-            transform: scale(0.95);
+        .btn.next {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            border-color: #2196F3;
         }
 
         .status {
-            font-size: 1.2rem;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            opacity: 0.8;
-        }
-
-        .paused {
-            color: #ff6b6b;
-        }
-
-        .running {
-            color: #51cf66;
-        }
-
-        .connection-status {
             position: fixed;
             top: 20px;
             right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
             padding: 10px 20px;
-            border-radius: 20px;
             font-size: 0.9rem;
-            font-weight: bold;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
-        .connected {
-            background: rgba(81, 207, 102, 0.8);
+        .status.connected {
+            background: rgba(76, 217, 100, 0.2);
+            border-color: rgba(76, 217, 100, 0.5);
+            color: #4cd964;
+        }
+
+        .status.connecting {
+            background: rgba(255, 193, 7, 0.2);
+            border-color: rgba(255, 193, 7, 0.5);
+            color: #ffc107;
+        }
+
+        .status.disconnected {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: rgba(255, 107, 107, 0.5);
+            color: #ff6b6b;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.connected .status-dot {
+            background: #4cd964;
+        }
+
+        .status.connecting .status-dot {
+            background: #ffc107;
+        }
+
+        .status.disconnected .status-dot {
+            background: #ff6b6b;
+        }
+
+        .timer-state {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .footer {
+            margin-top: 40px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .viewer-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .viewer-link:hover {
             color: white;
+            text-decoration: underline;
         }
 
-        .disconnected {
-            background: rgba(255, 107, 107, 0.8);
-            color: white;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
-        .loading {
-            background: rgba(255, 193, 7, 0.8);
-            color: white;
-        }
-
-        /* 点滅アニメーション */
         @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
-        /* レスポンシブ対応 */
+        /* レスポンシブデザイン */
         @media (max-width: 768px) {
-            h1 {
+            .title {
                 font-size: 2rem;
-                margin-bottom: 1.5rem;
             }
-            
-            .session-timer .timer-value {
-                font-size: 3.5rem;
+
+            .timer-display {
+                font-size: 3rem;
             }
-            
-            .session-timer .timer-label {
-                font-size: 1.6rem;
+
+            .timer-section, .control-section {
+                padding: 25px 20px;
+                margin-bottom: 20px;
             }
-            
-            .total-timer .timer-value {
-                font-size: 2.2rem;
-            }
-            
-            .timer-display, .control-panel {
-                padding: 1.5rem;
-                margin-bottom: 1.5rem;
-            }
-            
-            .button-group {
+
+            .controls {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
             }
-            
-            .control-button {
-                padding: 0.8rem 1rem;
-                font-size: 1rem;
+
+            .btn {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+                min-height: 50px;
+            }
+
+            .status {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+                font-size: 0.8rem;
             }
         }
 
         @media (max-width: 480px) {
+            .title {
+                font-size: 1.5rem;
+            }
+
+            .timer-display {
+                font-size: 2.5rem;
+            }
+
+            .timer-label, .control-title {
+                font-size: 1.1rem;
+            }
+
             .container {
-                padding: 0 10px;
+                padding: 10px;
             }
-            
-            .session-timer .timer-value {
-                font-size: 3rem;
+
+            .timer-section, .control-section {
+                padding: 20px 15px;
             }
-            
-            .session-timer .timer-label {
-                font-size: 1.4rem;
-            }
-            
-            .total-timer .timer-value {
-                font-size: 2rem;
-            }
-            
-            .button-group {
+
+            .controls {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div class="connection-status loading" id="connectionStatus">データ取得中...</div>
-    
+    <div class="status" id="status">
+        <span class="status-dot"></span>
+        <span id="status-text">接続中...</span>
+    </div>
+
     <div class="container">
-        <h1>SessionTimer</h1>
-        <div class="admin-badge">管理者モード</div>
-        
-        <!-- セッションタイマーを最上部に大きく表示 -->
-        <div class="timer-display session-timer">
-            <div class="timer-label">現在のセッション</div>
-            <div class="timer-value" id="sessionTimer">20:00</div>
-        </div>
-        
-        <!-- 全体タイマーを下部に小さく表示 -->
-        <div class="timer-display total-timer">
-            <div class="timer-label">全体残り時間</div>
-            <div class="timer-value" id="totalTimer">02:00:00</div>
-        </div>
-        
-        <div class="control-panel">
-            <h3>タイマー操作</h3>
-            <div class="button-group">
-                <button class="control-button start-btn" id="startBtn">Start</button>
-                <button class="control-button pause-btn" id="pauseBtn">Pause</button>
-                <button class="control-button reset-btn" id="resetBtn">Reset</button>
-                <button class="control-button next-btn" id="nextBtn">Next</button>
-            </div>
-            
-            <div class="status">
-                ステータス: <span id="statusText">データ取得中...</span>
-            </div>
-        </div>
+        <header class="header">
+            <h1 class="title">SessionTimer</h1>
+            <p class="subtitle">管理者コントロールパネル</p>
+        </header>
+
+        <main>
+            <section class="timer-section">
+                <h2 class="timer-label">全体タイマー</h2>
+                <div class="timer-display" id="total-timer">02:00:00</div>
+            </section>
+
+            <section class="timer-section">
+                <h2 class="timer-label">セッションタイマー</h2>
+                <div class="timer-display" id="session-timer">20:00</div>
+                <div class="timer-state" id="timer-state">
+                    状態: <span id="timer-status">停止中</span>
+                </div>
+            </section>
+
+            <section class="control-section">
+                <h2 class="control-title">タイマー制御</h2>
+                <div class="controls">
+                    <button class="btn start" id="start-btn">
+                        ▶ Start
+                    </button>
+                    <button class="btn pause" id="pause-btn">
+                        ⏸ Pause
+                    </button>
+                    <button class="btn reset" id="reset-btn">
+                        🔄 Reset
+                    </button>
+                    <button class="btn next" id="next-btn">
+                        ⏭ Next
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>閲覧者は <a href="/" class="viewer-link">閲覧者ページ</a> をご利用ください</p>
+        </footer>
     </div>
 
     <script>
@@ -341,98 +382,10 @@
         
         let isConnected = false;
         let pollInterval = null;
-        let audioContext = null;
-        let soundEnabled = false;
-        let previousSessionTime = null;
-        let notifiedTimes = new Set(); // 既に通知した時間を記録
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 3;
         
-        // 音声通知の初期化
-        async function initializeAudio() {
-            try {
-                // ユーザーに音声許可を求める
-                const userConsent = confirm('管理者用音声通知を有効にしますか？\n（相談時間の進行を音でお知らせします）');
-                
-                if (userConsent) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    soundEnabled = true;
-                    console.log('音声通知が有効になりました');
-                } else {
-                    console.log('音声通知は無効です');
-                }
-            } catch (error) {
-                console.error('音声の初期化に失敗:', error);
-            }
-        }
-        
-        // ビープ音を生成・再生
-        function playBeep(count = 1, frequency = 600, duration = 150) {
-            if (!soundEnabled || !audioContext) return;
-            
-            const playNextBeep = (remaining) => {
-                if (remaining <= 0) return;
-                
-                try {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + duration / 1000);
-                    
-                    // 次のビープ音を250ms後に再生
-                    if (remaining > 1) {
-                        setTimeout(() => playNextBeep(remaining - 1), 250);
-                    }
-                } catch (error) {
-                    console.error('ビープ音の再生に失敗:', error);
-                }
-            };
-            
-            playNextBeep(count);
-        }
-        
-        // 音声通知をチェック
-        function checkAudioNotifications(sessionTime) {
-            if (!soundEnabled) return;
-            
-            const elapsedSeconds = 1200 - sessionTime; // 経過秒数
-            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-            
-            // 各タイミングでの通知
-            const notifications = [
-                { elapsed: 10, beeps: 1, message: '10分経過' },
-                { elapsed: 15, beeps: 2, message: '15分経過（残り5分）' },
-                { elapsed: 17, beeps: 3, message: '17分経過（残り3分）' },
-                { elapsed: 18, beeps: 4, message: '18分経過（残り2分）' },
-                { elapsed: 19, beeps: 5, message: '19分経過（残り1分）' },
-                { elapsed: 20, beeps: 6, message: '20分経過（セッション終了）' }
-            ];
-            
-            notifications.forEach(notification => {
-                const targetSeconds = notification.elapsed * 60;
-                
-                // 指定の分数に達した瞬間（±2秒の範囲で判定）
-                if (Math.abs(elapsedSeconds - targetSeconds) <= 2 && !notifiedTimes.has(notification.elapsed)) {
-                    console.log(`管理者通知: ${notification.message}`);
-                    playBeep(notification.beeps);
-                    notifiedTimes.add(notification.elapsed);
-                }
-            });
-            
-            // セッションがリセットされた場合、通知履歴をクリア
-            if (sessionTime > 1150 && notifiedTimes.size > 0) { // 19分以上に戻った場合
-                notifiedTimes.clear();
-                console.log('通知履歴をリセットしました');
-            }
-        }
+        console.log('🚀 SessionTimer 管理者ページが開始されました');
         
         // ボタンの有効/無効を制御
         function setButtonsEnabled(enabled) {
@@ -445,7 +398,13 @@
         // タイマー状態を取得する関数
         async function fetchTimerState() {
             try {
-                const response = await fetch('/api/timer');
+                const response = await fetch('/api/timer', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    cache: 'no-cache'
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -459,12 +418,8 @@
                     connectionStatusElement.textContent = '接続済み';
                     connectionStatusElement.className = 'connection-status connected';
                     setButtonsEnabled(true);
-                }
-                
-                // 音声通知をチェック（セッション時間が変化した場合のみ）
-                if (previousSessionTime !== data.sessionTime) {
-                    checkAudioNotifications(data.sessionTime);
-                    previousSessionTime = data.sessionTime;
+                    consecutiveErrors = 0;
+                    console.log('🌐 サーバーに接続しました');
                 }
                 
                 // タイマー表示の更新
@@ -500,13 +455,12 @@
                     document.querySelector('.session-timer').style.borderColor = '#FFD700';
                 }
                 
-                console.log('タイマー状態を更新:', data);
-                
             } catch (error) {
-                console.error('タイマー状態の取得に失敗:', error);
+                console.error('💥 タイマー状態の取得に失敗:', error);
+                consecutiveErrors++;
                 
                 // 接続エラー状態を更新
-                if (isConnected) {
+                if (isConnected || consecutiveErrors >= maxConsecutiveErrors) {
                     isConnected = false;
                     connectionStatusElement.textContent = '接続エラー';
                     connectionStatusElement.className = 'connection-status disconnected';
@@ -574,6 +528,7 @@
         
         // 定期的にタイマー状態を取得
         function startPolling() {
+            console.log('🔄 タイマーポーリング開始');
             fetchTimerState();
             pollInterval = setInterval(fetchTimerState, 1000);
         }
@@ -583,17 +538,37 @@
             if (pollInterval) {
                 clearInterval(pollInterval);
                 pollInterval = null;
+                console.log('⏹️ タイマーポーリング停止');
             }
         }
         
         // ページ読み込み時にポーリング開始
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('📱 管理者ページ読み込み完了');
             setButtonsEnabled(false);
             startPolling();
         });
         
         // ページが閉じられる時にポーリング停止
-        window.addEventListener('beforeunload', stopPolling);
+        window.addEventListener('beforeunload', () => {
+            console.log('👋 管理者ページを閉じます');
+            stopPolling();
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
     </script>
 </body>
 </html>
+        // DOM要素の取得
+        const statusElement = document.getElementById('status');
+        const statusText = document.getElementById('status-text');
+        const totalTimerElement = document.getElementById('total-timer');
+        const sessionTimerElement = document.getElementById('session-timer');
+        const timerStatus

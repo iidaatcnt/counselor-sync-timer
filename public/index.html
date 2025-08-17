@@ -165,45 +165,6 @@
             51%, 100% { opacity: 0.3; }
         }
 
-        /* デバッグボタンのスタイル */
-        .debug-button {
-            position: fixed;
-            bottom: 20px;
-            padding: 10px 20px;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            z-index: 1000;
-            font-weight: bold;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease;
-        }
-
-        .debug-button:hover {
-            transform: translateY(-2px);
-        }
-
-        .debug-button:active {
-            transform: scale(0.95);
-        }
-
-        .audio-test-btn {
-            left: 20px;
-            background: linear-gradient(45deg, #ff9800, #f57c00);
-        }
-
-        .debug-info-btn {
-            left: 160px;
-            background: linear-gradient(45deg, #2196F3, #1976D2);
-        }
-
-        .force-notify-btn {
-            right: 20px;
-            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
-        }
-
         /* スマートフォン対応 */
         @media (max-width: 480px) {
             body {
@@ -242,24 +203,6 @@
                 padding: 6px 12px;
                 font-size: 0.7rem;
             }
-
-            .debug-button {
-                bottom: 10px;
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-
-            .audio-test-btn {
-                left: 10px;
-            }
-
-            .debug-info-btn {
-                left: 100px;
-            }
-
-            .force-notify-btn {
-                right: 10px;
-            }
         }
 
         /* 極小画面対応 */
@@ -274,15 +217,6 @@
             
             .total-timer .timer-value {
                 font-size: 1.5rem;
-            }
-
-            .debug-button {
-                padding: 6px 10px;
-                font-size: 0.7rem;
-            }
-
-            .debug-info-btn {
-                left: 80px;
             }
         }
 
@@ -353,186 +287,21 @@
         
         let isConnected = false;
         let pollInterval = null;
-        let audioContext = null;
-        let soundEnabled = false;
-        let previousSessionTime = null;
-        let notifiedTimes = new Set(); // 既に通知した時間を記録
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 3;
         
-        console.log('🚀 SessionTimer デバッグ版が開始されました');
-        
-        // 音声通知の初期化
-        async function initializeAudio() {
-            try {
-                console.log('🔊 音声初期化を開始');
-                
-                // ユーザーに音声許可を求める
-                const userConsent = confirm('相談時間の音声通知を有効にしますか？\n（10分、15分、17分、18分、19分、20分で音が鳴ります）');
-                
-                if (userConsent) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    soundEnabled = true;
-                    console.log('✅ 音声通知が有効になりました');
-                    console.log('🎵 音声コンテキスト状態:', audioContext.state);
-                } else {
-                    console.log('❌ 音声通知は無効にされました');
-                }
-            } catch (error) {
-                console.error('💥 音声の初期化に失敗:', error);
-            }
-        }
-        
-        // ビープ音を生成・再生
-        function playBeep(count = 1, frequency = 800, duration = 200) {
-            console.log(`🔔 ビープ音再生開始: ${count}回, ${frequency}Hz, ${duration}ms`);
-            
-            if (!soundEnabled || !audioContext) {
-                console.warn('⚠️ 音声が無効または初期化されていません');
-                return;
-            }
-            
-            const playNextBeep = (remaining) => {
-                if (remaining <= 0) {
-                    console.log('✅ ビープ音再生完了');
-                    return;
-                }
-                
-                try {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + duration / 1000);
-                    
-                    console.log(`🎵 ビープ音${count - remaining + 1}回目再生`);
-                    
-                    // 次のビープ音を300ms後に再生
-                    if (remaining > 1) {
-                        setTimeout(() => playNextBeep(remaining - 1), 300);
-                    }
-                } catch (error) {
-                    console.error('💥 ビープ音の再生に失敗:', error);
-                }
-            };
-            
-            playNextBeep(count);
-        }
-        
-        // 音声通知をチェック
-        function checkAudioNotifications(sessionTime) {
-            const elapsedSeconds = 1200 - sessionTime; // 経過秒数
-            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-            const remainingMinutes = Math.ceil(sessionTime / 60);
-            
-            // 詳細なデバッグ情報を表示
-            console.log(`🔊 音声チェック: 経過=${Math.floor(elapsedSeconds/60)}分${elapsedSeconds%60}秒, 残り=${Math.floor(sessionTime/60)}分${sessionTime%60}秒`);
-            console.log(`🎛️ 音声状態: 有効=${soundEnabled}, コンテキスト=${audioContext ? audioContext.state : 'なし'}`);
-            
-            if (!soundEnabled) {
-                console.log('❌ 音声通知は無効です');
-                return;
-            }
-            
-            // 各タイミングでの通知
-            const notifications = [
-                { elapsed: 10, remaining: 10, beeps: 1, message: '残り10分です' },
-                { elapsed: 15, remaining: 5, beeps: 2, message: '残り5分です' },
-                { elapsed: 17, remaining: 3, beeps: 3, message: '残り3分です' },
-                { elapsed: 18, remaining: 2, beeps: 4, message: '残り2分です' },
-                { elapsed: 19, remaining: 1, beeps: 5, message: '残り1分です' },
-                { elapsed: 20, remaining: 0, beeps: 6, message: 'セッション終了です' }
-            ];
-            
-            notifications.forEach(notification => {
-                const targetElapsedSeconds = notification.elapsed * 60;
-                const targetRemainingSeconds = notification.remaining * 60;
-                
-                // より緩い条件で判定（±5秒の範囲）
-                const elapsedMatch = Math.abs(elapsedSeconds - targetElapsedSeconds) <= 5;
-                const remainingMatch = Math.abs(sessionTime - targetRemainingSeconds) <= 5;
-                
-                // 既に通知済みかチェック
-                const alreadyNotified = notifiedTimes.has(notification.elapsed);
-                
-                console.log(`⏰ ${notification.elapsed}分チェック: 経過=${elapsedMatch}(${Math.abs(elapsedSeconds - targetElapsedSeconds)}s差), 残り=${remainingMatch}(${Math.abs(sessionTime - targetRemainingSeconds)}s差), 通知済み=${alreadyNotified}`);
-                
-                if ((elapsedMatch || remainingMatch) && !alreadyNotified) {
-                    console.log(`🔔 音声通知実行: ${notification.message}`);
-                    playBeep(notification.beeps);
-                    notifiedTimes.add(notification.elapsed);
-                    
-                    // 視覚的な通知も表示
-                    showVisualNotification(notification.message);
-                }
-            });
-            
-            // セッションがリセットされた場合、通知履歴をクリア
-            if (sessionTime > 1100 && notifiedTimes.size > 0) { // 18分以上に戻った場合
-                console.log('🔄 通知履歴をリセットしました');
-                notifiedTimes.clear();
-            }
-        }
-        
-        // 視覚的な通知を表示
-        function showVisualNotification(message) {
-            console.log('📱 視覚通知を表示:', message);
-            
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(255, 193, 7, 0.95);
-                color: black;
-                padding: 1rem 2rem;
-                border-radius: 10px;
-                font-size: 1.2rem;
-                font-weight: bold;
-                z-index: 2000;
-                animation: fadeInOut 3s ease-in-out;
-                text-align: center;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            `;
-            notification.textContent = message;
-            
-            // フェードイン・アウトアニメーション
-            if (!document.querySelector('#notificationStyle')) {
-                const style = document.createElement('style');
-                style.id = 'notificationStyle';
-                style.textContent = `
-                    @keyframes fadeInOut {
-                        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-                        20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-                        80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-                        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            document.body.appendChild(notification);
-            
-            // 3秒後に削除
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 3000);
-        }
+        console.log('🚀 SessionTimer カウンセラー用ページが開始されました');
         
         // タイマー状態を取得する関数
         async function fetchTimerState() {
             try {
-                const response = await fetch('/api/timer');
+                const response = await fetch('/api/timer', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    cache: 'no-cache'
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -545,14 +314,8 @@
                     isConnected = true;
                     connectionStatusElement.textContent = '接続済み';
                     connectionStatusElement.className = 'connection-status connected';
+                    consecutiveErrors = 0;
                     console.log('🌐 サーバーに接続しました');
-                }
-                
-                // 音声通知をチェック（セッション時間が変化した場合のみ）
-                if (previousSessionTime !== data.sessionTime) {
-                    console.log(`🔔 セッション時間変化検出: ${previousSessionTime} → ${data.sessionTime}`);
-                    checkAudioNotifications(data.sessionTime);
-                    previousSessionTime = data.sessionTime;
                 }
                 
                 // タイマー表示の更新
@@ -590,9 +353,10 @@
                 
             } catch (error) {
                 console.error('💥 タイマー状態の取得に失敗:', error);
+                consecutiveErrors++;
                 
                 // 接続エラー状態を更新
-                if (isConnected) {
+                if (isConnected || consecutiveErrors >= maxConsecutiveErrors) {
                     isConnected = false;
                     connectionStatusElement.textContent = '接続エラー';
                     connectionStatusElement.className = 'connection-status disconnected';
@@ -619,102 +383,9 @@
         }
         
         // ページ読み込み時にポーリング開始
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             console.log('📱 ページ読み込み完了');
-            
-            // 音声通知の初期化（ユーザーの許可を求める）
-            setTimeout(initializeAudio, 1000); // 1秒後に許可を求める
-            
-            // タイマーポーリング開始
             startPolling();
-            
-            // デバッグ用音声テストボタンを追加
-            const audioTestButton = document.createElement('button');
-            audioTestButton.textContent = '🔊 音声テスト';
-            audioTestButton.className = 'debug-button audio-test-btn';
-            
-            audioTestButton.addEventListener('click', async () => {
-                console.log('🔊 音声テストボタンが押されました');
-                
-                // 音声コンテキストの状態確認
-                if (!audioContext) {
-                    alert('音声コンテキストが初期化されていません。ページを再読み込みして音声許可をしてください。');
-                    return;
-                }
-                
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                    console.log('🔄 音声コンテキストを再開しました');
-                }
-                
-                console.log('🎵 音声コンテキスト状態:', audioContext.state);
-                console.log('🔊 音声有効状態:', soundEnabled);
-                
-                // テスト音を再生
-                alert('3回のビープ音をテストします');
-                playBeep(3);
-                
-                // 視覚通知のテスト
-                setTimeout(() => {
-                    showVisualNotification('テスト通知: 音声機能は正常です');
-                }, 1000);
-            });
-            
-            document.body.appendChild(audioTestButton);
-            
-            // デバッグ情報表示用ボタン
-            const debugInfoButton = document.createElement('button');
-            debugInfoButton.textContent = '📊 デバッグ情報';
-            debugInfoButton.className = 'debug-button debug-info-btn';
-            
-            debugInfoButton.addEventListener('click', () => {
-                const currentTime = sessionTimerElement.textContent;
-                const parts = currentTime.split(':');
-                const minutes = parseInt(parts[0]);
-                const seconds = parseInt(parts[1]);
-                const totalSeconds = minutes * 60 + seconds;
-                const elapsed = 1200 - totalSeconds;
-                
-                console.log('📊 現在のデバッグ情報:');
-                console.log('- 表示時間:', currentTime);
-                console.log('- 残り秒数:', totalSeconds);
-                console.log('- 経過秒数:', elapsed);
-                console.log('- 経過分数:', Math.floor(elapsed / 60));
-                console.log('- 音声有効:', soundEnabled);
-                console.log('- 音声コンテキスト:', audioContext ? audioContext.state : 'なし');
-                console.log('- 通知履歴:', Array.from(notifiedTimes));
-                
-                alert(`現在の状態:\n残り: ${currentTime}\n経過: ${Math.floor(elapsed/60)}分${elapsed%60}秒\n音声: ${soundEnabled ? '有効' : '無効'}\n通知済み: ${Array.from(notifiedTimes).join(', ')}`);
-            });
-            
-            document.body.appendChild(debugInfoButton);
-            
-            // 強制通知テスト用ボタン
-            const forceNotifyButton = document.createElement('button');
-            forceNotifyButton.textContent = '🚨 強制通知';
-            forceNotifyButton.className = 'debug-button force-notify-btn';
-            
-            forceNotifyButton.addEventListener('click', () => {
-                console.log('🚨 強制通知テスト開始');
-                
-                // 通知履歴をリセット
-                notifiedTimes.clear();
-                console.log('🔄 通知履歴をクリアしました');
-                
-                // 現在の時間で強制的に通知をテスト
-                const currentTime = sessionTimerElement.textContent;
-                const parts = currentTime.split(':');
-                const minutes = parseInt(parts[0]);
-                const seconds = parseInt(parts[1]);
-                const totalSeconds = minutes * 60 + seconds;
-                
-                // 強制的に10分経過として通知
-                console.log('🔔 強制的に10分通知をテスト');
-                playBeep(1);
-                showVisualNotification('強制テスト: 10分経過通知');
-            });
-            
-            document.body.appendChild(forceNotifyButton);
         });
         
         // ページアクティブ状態に応じてポーリング調整
@@ -745,6 +416,15 @@
                 window.scrollTo(0, 0);
                 console.log('📱 画面回転を検出');
             }, 100);
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
         });
     </script>
 </body>
