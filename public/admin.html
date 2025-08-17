@@ -31,7 +31,7 @@
 
         h1 {
             font-size: 3rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             font-weight: 300;
             letter-spacing: 2px;
@@ -65,25 +65,38 @@
         }
 
         .timer-value {
-            font-size: 4rem;
             font-weight: bold;
             font-family: 'Courier New', monospace;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             margin-bottom: 0.5rem;
         }
 
-        .total-timer {
+        /* セッションタイマー（最重要・上部・大きく） */
+        .session-timer {
             margin-bottom: 3rem;
+            border: 3px solid #FFD700;
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        .total-timer .timer-value {
+        .session-timer .timer-label {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .session-timer .timer-value {
             color: #FFD700;
             font-size: 5rem;
         }
 
-        .session-timer .timer-value {
-            color: #87CEEB;
-            font-size: 4rem;
+        /* 全体タイマー（下部・小さく） */
+        .total-timer .timer-label {
+            font-size: 1.3rem;
+        }
+
+        .total-timer .timer-value {
+            color: #E1BEE7;
+            font-size: 3rem;
         }
 
         .control-panel {
@@ -217,6 +230,68 @@
             background: rgba(255, 193, 7, 0.8);
             color: white;
         }
+
+        /* 点滅アニメーション */
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .session-timer .timer-value {
+                font-size: 3.5rem;
+            }
+            
+            .session-timer .timer-label {
+                font-size: 1.6rem;
+            }
+            
+            .total-timer .timer-value {
+                font-size: 2.2rem;
+            }
+            
+            .timer-display, .control-panel {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .button-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .control-button {
+                padding: 0.8rem 1rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .session-timer .timer-value {
+                font-size: 3rem;
+            }
+            
+            .session-timer .timer-label {
+                font-size: 1.4rem;
+            }
+            
+            .total-timer .timer-value {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -226,14 +301,16 @@
         <h1>SessionTimer</h1>
         <div class="admin-badge">管理者モード</div>
         
-        <div class="timer-display total-timer">
-            <div class="timer-label">全体タイマー</div>
-            <div class="timer-value" id="totalTimer">02:00:00</div>
+        <!-- セッションタイマーを最上部に大きく表示 -->
+        <div class="timer-display session-timer">
+            <div class="timer-label">現在のセッション</div>
+            <div class="timer-value" id="sessionTimer">20:00</div>
         </div>
         
-        <div class="timer-display session-timer">
-            <div class="timer-label">セッションタイマー</div>
-            <div class="timer-value" id="sessionTimer">20:00</div>
+        <!-- 全体タイマーを下部に小さく表示 -->
+        <div class="timer-display total-timer">
+            <div class="timer-label">全体残り時間</div>
+            <div class="timer-value" id="totalTimer">02:00:00</div>
         </div>
         
         <div class="control-panel">
@@ -310,16 +387,19 @@
                     totalTimerElement.style.color = '#ff6b6b';
                     totalTimerElement.style.animation = 'blink 1s infinite';
                 } else {
-                    totalTimerElement.style.color = '#FFD700';
+                    totalTimerElement.style.color = '#E1BEE7';
                     totalTimerElement.style.animation = 'none';
                 }
                 
                 if (data.sessionTime === 0) {
                     sessionTimerElement.style.color = '#ff6b6b';
                     sessionTimerElement.style.animation = 'blink 1s infinite';
+                    // セッション終了時の追加視覚効果
+                    document.querySelector('.session-timer').style.borderColor = '#ff6b6b';
                 } else {
-                    sessionTimerElement.style.color = '#87CEEB';
+                    sessionTimerElement.style.color = '#FFD700';
                     sessionTimerElement.style.animation = 'none';
+                    document.querySelector('.session-timer').style.borderColor = '#FFD700';
                 }
                 
                 console.log('タイマー状態を更新:', data);
@@ -407,16 +487,6 @@
                 pollInterval = null;
             }
         }
-        
-        // 点滅アニメーション
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes blink {
-                0%, 50% { opacity: 1; }
-                51%, 100% { opacity: 0.3; }
-            }
-        `;
-        document.head.appendChild(style);
         
         // ページ読み込み時にポーリング開始
         document.addEventListener('DOMContentLoaded', () => {

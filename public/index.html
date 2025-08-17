@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SessionTimer - 閲覧者</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SessionTimer - カウンセラー用</title>
     <style>
         * {
             margin: 0;
@@ -13,109 +13,244 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 10px;
+            overflow-x: hidden;
         }
 
         .container {
             text-align: center;
-            max-width: 800px;
+            max-width: 400px;
             width: 100%;
         }
 
         h1 {
-            font-size: 3rem;
-            margin-bottom: 3rem;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             font-weight: 300;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+        }
+
+        .user-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .timer-display {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .timer-label {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
             opacity: 0.9;
-            font-weight: 300;
+            font-weight: 400;
         }
 
         .timer-value {
-            font-size: 4rem;
             font-weight: bold;
             font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
-        .total-timer {
-            margin-bottom: 3rem;
+        /* セッションタイマー（最重要・上部・大きく） */
+        .session-timer {
+            margin-bottom: 2rem;
+            border: 3px solid #FFD700;
+            background: rgba(255, 255, 255, 0.25);
+            animation: glow 2s ease-in-out infinite alternate;
         }
 
-        .total-timer .timer-value {
+        .session-timer .timer-label {
+            font-size: 1.6rem;
+            font-weight: bold;
             color: #FFD700;
-            font-size: 5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         .session-timer .timer-value {
-            color: #87CEEB;
+            color: #FFD700;
             font-size: 4rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.6);
         }
 
-        .status {
-            font-size: 1.2rem;
-            margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+        /* 全体タイマー（下部・小さく） */
+        .total-timer .timer-label {
+            font-size: 1rem;
             opacity: 0.8;
         }
 
+        .total-timer .timer-value {
+            color: #E0E0E0;
+            font-size: 2.2rem;
+        }
+
+        .status {
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
         .paused {
-            color: #ff6b6b;
+            color: #FFAB91;
         }
 
         .running {
-            color: #51cf66;
+            color: #A5D6A7;
         }
 
         .connection-status {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
+            top: 15px;
+            right: 15px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: bold;
+            z-index: 1000;
         }
 
         .connected {
-            background: rgba(81, 207, 102, 0.8);
+            background: rgba(76, 175, 80, 0.9);
             color: white;
         }
 
         .disconnected {
-            background: rgba(255, 107, 107, 0.8);
+            background: rgba(244, 67, 54, 0.9);
             color: white;
         }
 
         .loading {
-            background: rgba(255, 193, 7, 0.8);
+            background: rgba(255, 193, 7, 0.9);
             color: white;
+        }
+
+        /* セッションタイマーのグロー効果 */
+        @keyframes glow {
+            from {
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 20px rgba(255, 215, 0, 0.3);
+            }
+            to {
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 30px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        /* 点滅アニメーション */
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* スマートフォン対応 */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            .timer-display {
+                padding: 1.2rem;
+                margin-bottom: 1.2rem;
+            }
+            
+            .session-timer .timer-value {
+                font-size: 3.5rem;
+            }
+            
+            .session-timer .timer-label {
+                font-size: 1.4rem;
+            }
+            
+            .total-timer .timer-value {
+                font-size: 1.8rem;
+            }
+            
+            .connection-status {
+                top: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* 極小画面対応 */
+        @media (max-width: 320px) {
+            .session-timer .timer-value {
+                font-size: 3rem;
+            }
+            
+            .session-timer .timer-label {
+                font-size: 1.2rem;
+            }
+            
+            .total-timer .timer-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* 横向き対応 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+                margin-bottom: 0.8rem;
+            }
+            
+            .timer-display {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .session-timer .timer-value {
+                font-size: 2.8rem;
+            }
+            
+            .total-timer .timer-value {
+                font-size: 1.6rem;
+            }
+        }
+
+        /* タッチ操作最適化 */
+        .timer-display {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
     </style>
 </head>
@@ -124,15 +259,18 @@
     
     <div class="container">
         <h1>SessionTimer</h1>
+        <div class="user-badge">カウンセラー用画面</div>
         
-        <div class="timer-display total-timer">
-            <div class="timer-label">全体タイマー</div>
-            <div class="timer-value" id="totalTimer">02:00:00</div>
+        <!-- セッションタイマーを最上部に大きく表示 -->
+        <div class="timer-display session-timer">
+            <div class="timer-label">現在のセッション</div>
+            <div class="timer-value" id="sessionTimer">20:00</div>
         </div>
         
-        <div class="timer-display session-timer">
-            <div class="timer-label">セッションタイマー</div>
-            <div class="timer-value" id="sessionTimer">20:00</div>
+        <!-- 全体タイマーを下部に小さく表示 -->
+        <div class="timer-display total-timer">
+            <div class="timer-label">全体残り時間</div>
+            <div class="timer-value" id="totalTimer">02:00:00</div>
         </div>
         
         <div class="status" id="status">
@@ -177,7 +315,7 @@
                     statusElement.textContent = '一時停止中';
                     statusElement.className = 'paused';
                 } else {
-                    statusElement.textContent = '実行中';
+                    statusElement.textContent = '相談中';
                     statusElement.className = 'running';
                 }
                 
@@ -186,16 +324,19 @@
                     totalTimerElement.style.color = '#ff6b6b';
                     totalTimerElement.style.animation = 'blink 1s infinite';
                 } else {
-                    totalTimerElement.style.color = '#FFD700';
+                    totalTimerElement.style.color = '#E0E0E0';
                     totalTimerElement.style.animation = 'none';
                 }
                 
                 if (data.sessionTime === 0) {
                     sessionTimerElement.style.color = '#ff6b6b';
                     sessionTimerElement.style.animation = 'blink 1s infinite';
+                    // セッション終了時の追加視覚効果
+                    document.querySelector('.session-timer').style.borderColor = '#ff6b6b';
                 } else {
-                    sessionTimerElement.style.color = '#87CEEB';
+                    sessionTimerElement.style.color = '#FFD700';
                     sessionTimerElement.style.animation = 'none';
+                    document.querySelector('.session-timer').style.borderColor = '#FFD700';
                 }
                 
                 console.log('タイマー状態を更新:', data);
@@ -228,21 +369,32 @@
             }
         }
         
-        // 点滅アニメーション
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes blink {
-                0%, 50% { opacity: 1; }
-                51%, 100% { opacity: 0.3; }
-            }
-        `;
-        document.head.appendChild(style);
-        
         // ページ読み込み時にポーリング開始
         document.addEventListener('DOMContentLoaded', startPolling);
         
+        // ページアクティブ状態に応じてポーリング調整
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // ページが非表示時は3秒間隔
+                stopPolling();
+                pollInterval = setInterval(fetchTimerState, 3000);
+            } else {
+                // ページ表示時は1秒間隔
+                stopPolling();
+                startPolling();
+            }
+        });
+        
         // ページが閉じられる時にポーリング停止
         window.addEventListener('beforeunload', stopPolling);
+        
+        // スマートフォンの回転対応
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                // 回転後のレイアウト調整
+                window.scrollTo(0, 0);
+            }, 100);
+        });
     </script>
 </body>
 </html>
