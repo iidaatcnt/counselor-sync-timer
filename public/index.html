@@ -287,6 +287,148 @@
         
         let isConnected = false;
         let pollInterval = null;
+        let audioContext = null;
+        let soundEnabled = false;
+        let previousSessionTime = null;
+        let notifiedTimes = new Set(); // 既に通知した時間を記録
+        
+        // 音声通知の初期化
+        async function initializeAudio() {
+            try {
+                // ユーザーに音声許可を求める
+                const userConsent = confirm('相談時間の音声通知を有効にしますか？\n（10分、15分、17分、18分、19分、20分で音が鳴ります）');
+                
+                if (userConsent) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    soundEnabled = true;
+                    console.log('音声通知が有効になりました');
+                } else {
+                    console.log('音声通知は無効です');
+                }
+            } catch (error) {
+                console.error('音声の初期化に失敗:', error);
+            }
+        }
+        
+        // ビープ音を生成・再生
+        function playBeep(count = 1, frequency = 800, duration = 200) {
+            if (!soundEnabled || !audioContext) return;
+            
+            const playNextBeep = (remaining) => {
+                if (remaining <= 0) return;
+                
+                try {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration / 1000);
+                    
+                    // 次のビープ音を300ms後に再生
+                    if (remaining > 1) {
+                        setTimeout(() => playNextBeep(remaining - 1), 300);
+                    }
+                } catch (error) {
+                    console.error('ビープ音の再生に失敗:', error);
+                }
+            };
+            
+            playNextBeep(count);
+        }
+        
+        // 音声通知をチェック
+        function checkAudioNotifications(sessionTime) {
+            if (!soundEnabled) return;
+            
+            const remainingMinutes = Math.ceil(sessionTime / 60);
+            const elapsedSeconds = 1200 - sessionTime; // 経過秒数
+            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+            
+            // 各タイミングでの通知
+            const notifications = [
+                { elapsed: 10, remaining: 10, beeps: 1, message: '残り10分です' },
+                { elapsed: 15, remaining: 5, beeps: 2, message: '残り5分です' },
+                { elapsed: 17, remaining: 3, beeps: 3, message: '残り3分です' },
+                { elapsed: 18, remaining: 2, beeps: 4, message: '残り2分です' },
+                { elapsed: 19, remaining: 1, beeps: 5, message: '残り1分です' },
+                { elapsed: 20, remaining: 0, beeps: 6, message: 'セッション終了です' }
+            ];
+            
+            notifications.forEach(notification => {
+                const targetSeconds = notification.elapsed * 60;
+                
+                // 指定の分数に達した瞬間（±2秒の範囲で判定）
+                if (Math.abs(elapsedSeconds - targetSeconds) <= 2 && !notifiedTimes.has(notification.elapsed)) {
+                    console.log(`音声通知: ${notification.message}`);
+                    playBeep(notification.beeps);
+                    notifiedTimes.add(notification.elapsed);
+                    
+                    // 視覚的な通知も表示
+                    showVisualNotification(notification.message);
+                }
+            });
+            
+            // セッションがリセットされた場合、通知履歴をクリア
+            if (sessionTime > 1150 && notifiedTimes.size > 0) { // 19分以上に戻った場合
+                notifiedTimes.clear();
+                console.log('通知履歴をリセットしました');
+            }
+        }
+        
+        // 視覚的な通知を表示
+        function showVisualNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(255, 193, 7, 0.95);
+                color: black;
+                padding: 1rem 2rem;
+                border-radius: 10px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                z-index: 2000;
+                animation: fadeInOut 3s ease-in-out;
+                text-align: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            `;
+            notification.textContent = message;
+            
+            // フェードイン・アウトアニメーション
+            if (!document.querySelector('#notificationStyle')) {
+                const style = document.createElement('style');
+                style.id = 'notificationStyle';
+                style.textContent = `
+                    @keyframes fadeInOut {
+                        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                        20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                        80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // 3秒後に削除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
         
         // タイマー状態を取得する関数
         async function fetchTimerState() {
@@ -304,6 +446,12 @@
                     isConnected = true;
                     connectionStatusElement.textContent = '接続済み';
                     connectionStatusElement.className = 'connection-status connected';
+                }
+                
+                // 音声通知をチェック（セッション時間が変化した場合のみ）
+                if (previousSessionTime !== data.sessionTime) {
+                    checkAudioNotifications(data.sessionTime);
+                    previousSessionTime = data.sessionTime;
                 }
                 
                 // タイマー表示の更新
@@ -370,7 +518,13 @@
         }
         
         // ページ読み込み時にポーリング開始
-        document.addEventListener('DOMContentLoaded', startPolling);
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 音声通知の初期化（ユーザーの許可を求める）
+            setTimeout(initializeAudio, 1000); // 1秒後に許可を求める
+            
+            // タイマーポーリング開始
+            startPolling();
+        });
         
         // ページアクティブ状態に応じてポーリング調整
         document.addEventListener('visibilitychange', () => {

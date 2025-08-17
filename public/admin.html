@@ -341,6 +341,98 @@
         
         let isConnected = false;
         let pollInterval = null;
+        let audioContext = null;
+        let soundEnabled = false;
+        let previousSessionTime = null;
+        let notifiedTimes = new Set(); // 既に通知した時間を記録
+        
+        // 音声通知の初期化
+        async function initializeAudio() {
+            try {
+                // ユーザーに音声許可を求める
+                const userConsent = confirm('管理者用音声通知を有効にしますか？\n（相談時間の進行を音でお知らせします）');
+                
+                if (userConsent) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    soundEnabled = true;
+                    console.log('音声通知が有効になりました');
+                } else {
+                    console.log('音声通知は無効です');
+                }
+            } catch (error) {
+                console.error('音声の初期化に失敗:', error);
+            }
+        }
+        
+        // ビープ音を生成・再生
+        function playBeep(count = 1, frequency = 600, duration = 150) {
+            if (!soundEnabled || !audioContext) return;
+            
+            const playNextBeep = (remaining) => {
+                if (remaining <= 0) return;
+                
+                try {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration / 1000);
+                    
+                    // 次のビープ音を250ms後に再生
+                    if (remaining > 1) {
+                        setTimeout(() => playNextBeep(remaining - 1), 250);
+                    }
+                } catch (error) {
+                    console.error('ビープ音の再生に失敗:', error);
+                }
+            };
+            
+            playNextBeep(count);
+        }
+        
+        // 音声通知をチェック
+        function checkAudioNotifications(sessionTime) {
+            if (!soundEnabled) return;
+            
+            const elapsedSeconds = 1200 - sessionTime; // 経過秒数
+            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+            
+            // 各タイミングでの通知
+            const notifications = [
+                { elapsed: 10, beeps: 1, message: '10分経過' },
+                { elapsed: 15, beeps: 2, message: '15分経過（残り5分）' },
+                { elapsed: 17, beeps: 3, message: '17分経過（残り3分）' },
+                { elapsed: 18, beeps: 4, message: '18分経過（残り2分）' },
+                { elapsed: 19, beeps: 5, message: '19分経過（残り1分）' },
+                { elapsed: 20, beeps: 6, message: '20分経過（セッション終了）' }
+            ];
+            
+            notifications.forEach(notification => {
+                const targetSeconds = notification.elapsed * 60;
+                
+                // 指定の分数に達した瞬間（±2秒の範囲で判定）
+                if (Math.abs(elapsedSeconds - targetSeconds) <= 2 && !notifiedTimes.has(notification.elapsed)) {
+                    console.log(`管理者通知: ${notification.message}`);
+                    playBeep(notification.beeps);
+                    notifiedTimes.add(notification.elapsed);
+                }
+            });
+            
+            // セッションがリセットされた場合、通知履歴をクリア
+            if (sessionTime > 1150 && notifiedTimes.size > 0) { // 19分以上に戻った場合
+                notifiedTimes.clear();
+                console.log('通知履歴をリセットしました');
+            }
+        }
         
         // ボタンの有効/無効を制御
         function setButtonsEnabled(enabled) {
@@ -367,6 +459,12 @@
                     connectionStatusElement.textContent = '接続済み';
                     connectionStatusElement.className = 'connection-status connected';
                     setButtonsEnabled(true);
+                }
+                
+                // 音声通知をチェック（セッション時間が変化した場合のみ）
+                if (previousSessionTime !== data.sessionTime) {
+                    checkAudioNotifications(data.sessionTime);
+                    previousSessionTime = data.sessionTime;
                 }
                 
                 // タイマー表示の更新
