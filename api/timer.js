@@ -1,4 +1,4 @@
-// Vercel用のタイマーAPI
+// Vercel用のタイマーAPI - カウントダウン対応版
 // このコードをapi/timer.jsに保存してください
 
 // グローバル変数でタイマー状態を管理
@@ -6,9 +6,9 @@ let timerState = {
     isRunning: false,
     isPaused: false,
     startTime: null,
-    pausedDuration: 0,
-    lastPauseTime: null,
-    currentTime: 0
+    totalDuration: 20 * 60 * 1000, // デフォルト20分
+    remainingTime: 20 * 60 * 1000,
+    pausedAt: null
 };
 
 export default function handler(req, res) {
@@ -28,11 +28,15 @@ export default function handler(req, res) {
 
     // GET: タイマーの現在状態を返す
     if (req.method === 'GET') {
-        // 実行中の場合、現在時刻を計算
+        // 実行中の場合、残り時間を計算
         if (timerState.isRunning && !timerState.isPaused) {
-            const now = Date.now();
-            const elapsed = now - timerState.startTime - timerState.pausedDuration;
-            timerState.currentTime = elapsed;
+            const elapsed = Date.now() - timerState.startTime;
+            timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
+            
+            // タイムアップしたら自動停止
+            if (timerState.remainingTime === 0) {
+                timerState.isRunning = false;
+            }
         }
         
         res.status(200).json(timerState);
@@ -41,41 +45,57 @@ export default function handler(req, res) {
 
     // POST: タイマーを操作
     if (req.method === 'POST') {
-        const { action } = req.body;
+        const { action, state } = req.body;
 
         switch (action) {
             case 'start':
                 if (!timerState.isRunning) {
+                    // 新規開始（stateから設定を受け取る）
+                    if (state && state.totalDuration) {
+                        timerState.totalDuration = state.totalDuration;
+                        timerState.remainingTime = state.totalDuration;
+                    }
                     timerState.isRunning = true;
                     timerState.isPaused = false;
                     timerState.startTime = Date.now();
-                    timerState.pausedDuration = 0;
-                    timerState.lastPauseTime = null;
+                    timerState.pausedAt = null;
                 } else if (timerState.isPaused) {
-                    const pauseDuration = Date.now() - timerState.lastPauseTime;
-                    timerState.pausedDuration += pauseDuration;
+                    // 一時停止からの再開
+                    const pauseDuration = Date.now() - timerState.pausedAt;
+                    timerState.startTime += pauseDuration;
                     timerState.isPaused = false;
-                    timerState.lastPauseTime = null;
+                    timerState.pausedAt = null;
                 }
                 break;
 
             case 'pause':
                 if (timerState.isRunning && !timerState.isPaused) {
                     timerState.isPaused = true;
-                    timerState.lastPauseTime = Date.now();
+                    timerState.pausedAt = Date.now();
+                    // 現在の残り時間を保存
+                    const elapsed = Date.now() - timerState.startTime;
+                    timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
                 }
                 break;
 
             case 'stop':
+                timerState.isRunning = false;
+                timerState.isPaused = false;
+                timerState.startTime = null;
+                timerState.remainingTime = timerState.totalDuration;
+                timerState.pausedAt = null;
+                break;
+
             case 'reset':
-                timerState = {
-                    isRunning: false,
-                    isPaused: false,
-                    startTime: null,
-                    pausedDuration: 0,
-                    lastPauseTime: null,
-                    currentTime: 0
-                };
+                // リセット時に新しい時間設定を受け取る
+                if (state && state.totalDuration) {
+                    timerState.totalDuration = state.totalDuration;
+                }
+                timerState.isRunning = false;
+                timerState.isPaused = false;
+                timerState.startTime = null;
+                timerState.remainingTime = timerState.totalDuration;
+                timerState.pausedAt = null;
                 break;
         }
 
