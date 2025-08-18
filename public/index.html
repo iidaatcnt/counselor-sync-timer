@@ -345,7 +345,8 @@
             min17: '/sounds/counselor_17min.wav',
             min18: '/sounds/counselor_18min.wav',
             min19: '/sounds/counselor_19min.wav',
-            min20: '/sounds/counselor_end.wav'
+            min20: '/sounds/counselor_end.wav',
+            soundCheck: '/sounds/counselor_sound_check.wav'
         };
 
         // 音声メッセージのデータ
@@ -356,13 +357,16 @@
             min17: "残り時間は3分です。まとめの準備をお願いします。",
             min18: "残り時間は2分です。",
             min19: "残り時間は1分です。",
-            min20: "お疲れ様でした。最後に忘れ物がないかもう一度確認してください。不明な点があれば受付にて承ります。"
+            min20: "お疲れ様でした。最後に忘れ物がないかもう一度確認してください。不明な点があれば受付にて承ります。",
+            soundCheck: "音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。"
         };
 
         // 音声ファイルの事前読み込み
         const audioCache = {};
         
         function preloadAudioFiles() {
+            console.log('🎵 音声ファイルの事前読み込みを開始');
+            
             Object.keys(audioFiles).forEach(key => {
                 const audio = new Audio();
                 audio.preload = 'auto';
@@ -370,27 +374,36 @@
                 audio.volume = 0.8;
                 
                 audio.addEventListener('canplaythrough', () => {
-                    console.log(`✅ 音声ファイル読み込み完了: ${key}`);
+                    console.log(`✅ 音声ファイル読み込み完了: ${key} (${audioFiles[key]})`);
                 });
                 
                 audio.addEventListener('error', (e) => {
-                    console.error(`❌ 音声ファイル読み込み失敗: ${key}`, e);
+                    console.error(`❌ 音声ファイル読み込み失敗: ${key} (${audioFiles[key]})`, e);
+                });
+                
+                // 読み込み状況を定期チェック
+                audio.addEventListener('loadstart', () => {
+                    console.log(`🔄 音声ファイル読み込み開始: ${key}`);
                 });
                 
                 audioCache[key] = audio;
             });
+            
+            console.log(`🎵 ${Object.keys(audioFiles).length}個の音声ファイル読み込みを開始しました`);
         }
 
         // WAVファイルによる音声再生
         function playAudioFile(key, callback = null) {
             if (!voiceEnabled) {
-                console.log('🔇 音声無効');
+                console.log('🔇 音声無効のため再生をスキップ');
                 return;
             }
 
             const audio = audioCache[key];
             if (!audio) {
                 console.error(`❌ 音声ファイル未登録: ${key}`);
+                console.log('🔄 Web Speech APIで代替再生');
+                speakJapanese(voiceMessages[key], callback);
                 return;
             }
 
@@ -398,28 +411,35 @@
                 // メッセージを画面に表示
                 showVoiceMessage(voiceMessages[key]);
 
-                // 音声再生
+                // 音声再生の準備
                 audio.currentTime = 0; // 最初から再生
+                
+                // 音量確認
+                if (audio.volume < 0.5) {
+                    audio.volume = 0.8;
+                    console.log('🔊 音量を0.8に調整');
+                }
+                
                 const playPromise = audio.play();
                 
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
-                        console.log(`🎵 音声再生開始: ${key}`);
+                        console.log(`🎵 音声ファイル再生開始: ${key} (${audioFiles[key]})`);
                     }).catch((error) => {
-                        console.error(`❌ 音声再生エラー: ${key}`, error);
-                        // フォールバック: Web Speech API
+                        console.error(`❌ 音声ファイル再生エラー: ${key}`, error);
+                        console.log('🔄 Web Speech APIで代替再生');
                         speakJapanese(voiceMessages[key], callback);
                     });
                 }
 
                 audio.onended = () => {
-                    console.log(`✅ 音声再生完了: ${key}`);
+                    console.log(`✅ 音声ファイル再生完了: ${key}`);
                     if (callback) callback();
                 };
 
             } catch (error) {
-                console.error(`❌ 音声再生失敗: ${key}`, error);
-                // フォールバック: Web Speech API
+                console.error(`❌ 音声ファイル再生失敗: ${key}`, error);
+                console.log('🔄 Web Speech APIで代替再生');
                 speakJapanese(voiceMessages[key], callback);
             }
         }
@@ -504,12 +524,19 @@
             updateVoiceUI();
             
             if (voiceEnabled) {
-                // 有効にした時のテスト音声
-                if (audioCache['start']) {
-                    playAudioFile('start');
-                } else {
-                    speakJapanese("音声案内を開始します。");
-                }
+                console.log('🎙️ 音声案内をONにしました');
+                // 音声ON時は必ずcounselor_sound_check.wavを再生
+                setTimeout(() => {
+                    if (audioCache['soundCheck']) {
+                        console.log('🎵 音声確認ファイルを再生: counselor_sound_check.wav');
+                        playAudioFile('soundCheck');
+                    } else {
+                        console.log('⚠️ 音声確認ファイル未読み込み - Web Speech APIで代替');
+                        speakJapanese("音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。");
+                    }
+                }, 200); // 少し遅延して確実に実行
+            } else {
+                console.log('🔇 音声案内をOFFにしました');
             }
         }
 
@@ -560,9 +587,19 @@
         // セッション開始の検出
         function checkSessionStart(currentStatus, previousStatus) {
             if (voiceEnabled && previousStatus === '一時停止中' && currentStatus === '実行中') {
-                console.log('🔔 セッション開始検出');
-                playAudioFile('start');
+                console.log('🔔 タイマー開始を検出しました');
+                console.log('🎵 開始案内ファイルを再生: counselor_start.wav');
+                
+                // タイマー開始時は必ずcounselor_start.wavを再生
+                if (audioCache['start']) {
+                    playAudioFile('start');
+                } else {
+                    console.log('⚠️ 開始案内ファイル未読み込み - Web Speech APIで代替');
+                    speakJapanese(voiceMessages.start);
+                }
+                
                 notifiedTimes.clear(); // 通知履歴をクリア
+                console.log('🔄 通知履歴をクリアしました');
             }
         }
 
@@ -640,10 +677,10 @@
                 return;
             }
             console.log('🎙️ 音声テスト実行');
-            if (audioCache['min10']) {
-                playAudioFile('min10');
+            if (audioCache['soundCheck']) {
+                playAudioFile('soundCheck');
             } else {
-                speakJapanese("音声案内のテストです。正常に動作しています。");
+                speakJapanese("音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。");
             }
         }
 
@@ -657,15 +694,28 @@
         }
 
         function showDebugInfo() {
+            const loadedFiles = Object.keys(audioCache).filter(key => {
+                const audio = audioCache[key];
+                return audio && audio.readyState >= 3; // HAVE_FUTURE_DATA以上
+            });
+            
             const info = `
 🎙️ 音声状態: ${voiceEnabled ? 'ON' : 'OFF'}
 🔊 Speech API: ${voiceReady ? '対応' : '未対応'}
-🔔 通知履歴: ${Array.from(notifiedTimes).join(', ')}
+🔔 通知履歴: ${Array.from(notifiedTimes).join(', ') || 'なし'}
 🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}
 📱 ユーザーエージェント: ${navigator.userAgent.includes('Mobile') ? 'モバイル' : 'デスクトップ'}
-🎵 音声ファイル: ${Object.keys(audioCache).length}/7 読み込み済み
+🎵 音声ファイル: ${Object.keys(audioCache).length}個中${loadedFiles.length}個読み込み済み
+📁 読み込み済みファイル: ${loadedFiles.join(', ') || 'なし'}
             `;
             alert(info);
+            
+            // コンソールにも詳細情報を出力
+            console.log('📊 詳細デバッグ情報:');
+            Object.keys(audioCache).forEach(key => {
+                const audio = audioCache[key];
+                console.log(`  ${key}: readyState=${audio.readyState}, src=${audio.src}`);
+            });
         }
 
         // イベントリスナー
@@ -679,6 +729,7 @@
         // ページ読み込み後の初期化
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('📱 相談員ページ読み込み完了');
+            console.log('🎯 SessionTimer音声機能付き相談員ページを初期化します');
             
             // 音声ファイルの事前読み込み
             preloadAudioFiles();
@@ -686,18 +737,22 @@
             // 音声システムの準備
             initializeVoice();
             updateVoiceUI();
+            console.log('🎙️ 音声システム初期化完了');
             
             // 初期データ取得
             updateConnectionStatus('connecting');
             try {
                 await fetchTimerState();
+                console.log('✅ 初期データ取得成功');
             } catch (error) {
-                console.error('初期データ取得失敗:', error);
+                console.error('❌ 初期データ取得失敗:', error);
             }
             
             // ポーリング開始
             pollInterval = setInterval(fetchTimerState, 1000);
-            console.log('🔄 ポーリング開始');
+            console.log('🔄 1秒間隔でのポーリング開始');
+            
+            console.log('🚀 相談員ページの初期化が完了しました');
         });
 
         // ページ離脱時のクリーンアップ
