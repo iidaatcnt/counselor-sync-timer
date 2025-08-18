@@ -513,6 +513,8 @@
                 timerState.remainingTime = data.remainingTime || data.totalDuration || (20 * 60 * 1000);
                 timerState.pausedAt = data.pausedAt || null;
                 
+                console.log('更新後のタイマー状態:', timerState); // デバッグ用
+                
                 // 音声再生済みリストをクリア（新しいセッション）
                 if (!timerState.isRunning) {
                     soundsPlayed.clear();

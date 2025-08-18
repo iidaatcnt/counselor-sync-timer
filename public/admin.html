@@ -511,16 +511,26 @@
         // サーバーへの状態送信
         async function sendStateToServer(action) {
             try {
+                // 送信するデータを整形
+                const requestData = {
+                    action: action,
+                    timestamp: Date.now()
+                };
+                
+                // actionごとに必要なデータを追加
+                if (action === 'start' || action === 'reset') {
+                    requestData.state = {
+                        totalDuration: timerState.totalDuration,
+                        remainingTime: timerState.remainingTime
+                    };
+                }
+                
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        action: action,
-                        state: timerState,
-                        timestamp: Date.now()
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
                 if (!response.ok) {
@@ -530,6 +540,16 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // サーバーの状態で更新
+                    if (data.state) {
+                        timerState.isRunning = data.state.isRunning;
+                        timerState.isPaused = data.state.isPaused;
+                        timerState.startTime = data.state.startTime;
+                        timerState.totalDuration = data.state.totalDuration;
+                        timerState.remainingTime = data.state.remainingTime;
+                        timerState.pausedAt = data.state.pausedAt;
+                    }
+                    
                     connectionStatus.textContent = '送信完了';
                     connectionStatus.className = 'status connected';
                     updateApiStats();
@@ -655,10 +675,53 @@
         stopBtn.addEventListener('click', stopTimer);
         resetBtn.addEventListener('click', resetTimer);
 
+        // 初期状態を取得
+        async function getInitialState() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/timer`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                console.log('初期状態:', data); // デバッグ用
+                
+                // サーバーの状態でローカル状態を更新
+                timerState.isRunning = data.isRunning || false;
+                timerState.isPaused = data.isPaused || false;
+                timerState.startTime = data.startTime || null;
+                timerState.totalDuration = data.totalDuration || (20 * 60 * 1000);
+                timerState.remainingTime = data.remainingTime || data.totalDuration || (20 * 60 * 1000);
+                timerState.pausedAt = data.pausedAt || null;
+                
+                // 時間入力フィールドを更新
+                const totalSeconds = Math.floor(timerState.totalDuration / 1000);
+                minutesInput.value = Math.floor(totalSeconds / 60);
+                secondsInput.value = totalSeconds % 60;
+                
+                connectionStatus.textContent = '待機中';
+                connectionStatus.className = 'status';
+                updateApiStats();
+                updateButtonStates();
+                updateDisplay();
+                
+            } catch (error) {
+                console.error('初期化エラー:', error);
+                connectionStatus.textContent = '接続エラー';
+                connectionStatus.className = 'status disconnected';
+            }
+        }
+
         // 初期化
         function initialize() {
-            updateDisplay();
-            updateButtonStates();
+            // 初期状態を取得
+            getInitialState();
             
             // 表示の定期更新
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);

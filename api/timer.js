@@ -39,6 +39,7 @@ export default function handler(req, res) {
             }
         }
         
+        console.log('GET response:', timerState); // デバッグ用
         res.status(200).json(timerState);
         return;
     }
@@ -46,6 +47,7 @@ export default function handler(req, res) {
     // POST: タイマーを操作
     if (req.method === 'POST') {
         const { action, state } = req.body;
+        console.log('POST request:', { action, state }); // デバッグ用
 
         switch (action) {
             case 'start':
@@ -99,6 +101,7 @@ export default function handler(req, res) {
                 break;
         }
 
+        console.log('POST response:', timerState); // デバッグ用
         res.status(200).json({ 
             success: true, 
             state: timerState
