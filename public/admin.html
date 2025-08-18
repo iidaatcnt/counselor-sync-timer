@@ -174,10 +174,10 @@
             <button id="resetBtn" class="btn-reset">リセット</button>
         </div>
 
-        <div class="status" id="connectionStatus">接続中...</div>
+        <div class="status" id="connectionStatus">待機中</div>
         
         <div class="api-status">
-            <div>最終更新: <span id="lastUpdate">--</span></div>
+            <div>最終操作: <span id="lastUpdate">--</span></div>
             <div>API呼び出し回数: <span id="apiCalls">0</span></div>
         </div>
 
@@ -204,8 +204,7 @@
 
         // 設定
         const API_BASE_URL = window.location.origin;
-        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新
-        const SYNC_INTERVAL = 2000; // 2秒ごとに同期（Vercel用）
+        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新（ローカル計算）
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
@@ -217,7 +216,7 @@
         const stopBtn = document.getElementById('stopBtn');
         const resetBtn = document.getElementById('resetBtn');
 
-        // タイマー表示の更新
+        // タイマー表示の更新（ローカル計算のみ）
         function updateDisplay() {
             if (timerState.isRunning && !timerState.isPaused) {
                 const now = Date.now();
@@ -245,7 +244,7 @@
             lastUpdateDisplay.textContent = new Date().toLocaleTimeString('ja-JP');
         }
 
-        // サーバーへの状態送信
+        // サーバーへの状態送信（操作時のみ）
         async function sendStateToServer(action) {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
@@ -269,9 +268,15 @@
                 // サーバーからの応答で状態を更新
                 if (data.success) {
                     timerState = data.state;
-                    connectionStatus.textContent = '接続済み';
+                    connectionStatus.textContent = '送信完了';
                     connectionStatus.className = 'status connected';
                     updateApiStats();
+                    
+                    // 3秒後に表示を戻す
+                    setTimeout(() => {
+                        connectionStatus.textContent = '待機中';
+                        connectionStatus.className = 'status';
+                    }, 3000);
                 }
 
                 return data;
@@ -376,8 +381,8 @@
             }
         }
 
-        // サーバーから現在の状態を取得
-        async function syncWithServer() {
+        // 初回のみサーバーから状態を取得
+        async function getInitialState() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
                     method: 'GET',
@@ -393,14 +398,14 @@
                 const data = await response.json();
                 timerState = data;
                 
-                connectionStatus.textContent = '接続済み';
-                connectionStatus.className = 'status connected';
+                connectionStatus.textContent = '待機中';
+                connectionStatus.className = 'status';
                 updateApiStats();
                 updateButtonStates();
                 updateDisplay();
                 
             } catch (error) {
-                console.error('同期エラー:', error);
+                console.error('初期化エラー:', error);
                 connectionStatus.textContent = '接続エラー';
                 connectionStatus.className = 'status disconnected';
             }
@@ -414,14 +419,11 @@
 
         // 初期化
         function initialize() {
-            // 初回同期
-            syncWithServer();
+            // 初回のみ状態を取得
+            getInitialState();
 
-            // 表示の定期更新
+            // 表示の定期更新（ローカル計算のみ）
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
-
-            // 定期的な同期（Vercel用に追加）
-            setInterval(syncWithServer, SYNC_INTERVAL);
         }
 
         // ページ表示/非表示の処理
@@ -429,8 +431,9 @@
             if (document.hidden) {
                 clearInterval(displayInterval);
             } else {
-                syncWithServer();
+                // 再表示時は表示更新のみ再開（同期はしない）
                 displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
+                updateDisplay();
             }
         });
 
