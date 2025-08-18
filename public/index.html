@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SessionTimer - 相談員</title>
+    <title>SessionTimer - 管理者ページ（問題調査版）</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #43C6AC 0%, #191654 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -62,41 +62,34 @@
         }
 
         .timer-display {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             padding: 40px 20px;
             text-align: center;
         }
 
         .session-timer {
-            font-size: 5rem;
+            font-size: 4rem;
             font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-            line-height: 1;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .session-label {
-            font-size: 1.5rem;
-            margin-bottom: 40px;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
             opacity: 0.9;
         }
 
         .total-timer {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             opacity: 0.8;
-            margin-bottom: 30px;
         }
 
         .status-display {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin: 20px 0;
-            padding: 15px 25px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 25px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             display: inline-block;
         }
 
@@ -105,22 +98,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 30px 0;
-            gap: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
+            margin: 20px 0;
+            gap: 15px;
         }
 
         .toggle-switch {
             position: relative;
-            width: 80px;
-            height: 40px;
+            width: 60px;
+            height: 30px;
             background: #ccc;
-            border-radius: 20px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .toggle-switch.active {
@@ -129,29 +118,23 @@
 
         .toggle-slider {
             position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 32px;
-            height: 32px;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
             background: white;
             border-radius: 50%;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .toggle-switch.active .toggle-slider {
-            transform: translateX(40px);
-        }
-
-        .sound-label {
-            font-size: 1.2rem;
-            font-weight: bold;
+            transform: translateX(30px);
         }
 
         .sound-status {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            min-width: 80px;
         }
 
         .sound-status.enabled {
@@ -162,48 +145,56 @@
             color: #f44336;
         }
 
-        /* 音声メッセージ表示 */
-        .voice-message {
-            margin: 20px 0;
-            padding: 15px 25px;
-            background: rgba(76, 175, 80, 0.2);
-            border: 2px solid rgba(76, 175, 80, 0.5);
-            border-radius: 15px;
-            font-size: 1.1rem;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.5s ease;
+        .controls {
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
             max-width: 600px;
+            margin: 0 auto;
         }
 
-        .voice-message.show {
-            opacity: 1;
+        .control-btn {
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .start-btn { background: #4CAF50; color: white; }
+        .pause-btn { background: #FF9800; color: white; }
+        .reset-btn { background: #f44336; color: white; }
+        .next-btn { background: #2196F3; color: white; }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:active {
             transform: translateY(0);
         }
 
         /* テストボタン */
         .test-controls {
-            padding: 30px 20px;
+            padding: 20px;
             text-align: center;
             border-top: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
         }
 
         .test-btn {
-            margin: 8px;
-            padding: 12px 24px;
+            margin: 5px;
+            padding: 10px 20px;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1rem;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .test-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
         .sound-test-btn {
@@ -211,8 +202,8 @@
             color: white;
         }
 
-        .voice-test-btn {
-            background: #9B59B6;
+        .force-notify-btn {
+            background: #8E44AD;
             color: white;
         }
 
@@ -221,60 +212,20 @@
             color: white;
         }
 
-        /* アニメーション効果 */
-        .timer-pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-
         /* レスポンシブ対応 */
         @media (max-width: 768px) {
             .session-timer {
-                font-size: 3.5rem;
+                font-size: 3rem;
             }
             
-            .session-label {
-                font-size: 1.2rem;
-            }
-            
-            .total-timer {
-                font-size: 1.4rem;
-            }
-            
-            .sound-toggle-container {
-                flex-direction: column;
+            .controls {
+                grid-template-columns: 1fr 1fr;
                 gap: 15px;
             }
             
-            .toggle-switch {
-                width: 70px;
-                height: 35px;
-            }
-            
-            .toggle-slider {
-                width: 27px;
-                height: 27px;
-                top: 4px;
-                left: 4px;
-            }
-            
-            .toggle-switch.active .toggle-slider {
-                transform: translateX(35px);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .session-timer {
-                font-size: 2.8rem;
-            }
-            
-            .header h1 {
-                font-size: 1.5rem;
+            .control-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -283,7 +234,7 @@
     <div class="connection-status" id="connectionStatus">接続中...</div>
     
     <div class="header">
-        <h1>🎯 SessionTimer - 相談員</h1>
+        <h1>🔍 SessionTimer - 管理者（調査版）</h1>
     </div>
 
     <div class="timer-display">
@@ -297,35 +248,30 @@
 
         <!-- 音声通知トグルボタン -->
         <div class="sound-toggle-container">
-            <span class="sound-label">🎙️ 音声案内</span>
+            <span>🔊 音声通知:</span>
             <div class="toggle-switch" id="soundToggle">
                 <div class="toggle-slider"></div>
             </div>
             <span class="sound-status disabled" id="soundStatus">OFF</span>
         </div>
+    </div>
 
-        <!-- 音声メッセージ表示 -->
-        <div class="voice-message" id="voiceMessage"></div>
+    <div class="controls">
+        <button class="control-btn start-btn" id="startBtn">▶️ Start</button>
+        <button class="control-btn pause-btn" id="pauseBtn">⏸️ Pause</button>
+        <button class="control-btn reset-btn" id="resetBtn">🔄 Reset</button>
+        <button class="control-btn next-btn" id="nextBtn">⏭️ Next</button>
     </div>
 
     <div class="test-controls">
-        <button class="test-btn voice-test-btn" onclick="testVoice()">🎙️ 音声テスト</button>
-        <button class="test-btn debug-btn" onclick="showDebugInfo()">📊 デバッグ情報</button>
+        <button class="test-btn sound-test-btn" id="soundTestBtn">🔊 音声テスト</button>
+        <button class="test-btn debug-btn" id="debugBtn">📊 デバッグ情報</button>
+        <button class="test-btn force-notify-btn" id="forceNotifyBtn">🚨 強制通知</button>
+        <button class="test-btn" style="background: #2ECC71; color: white;" id="connectionTestBtn">🌐 接続テスト</button>
     </div>
 
     <script>
-        console.log('🚀 SessionTimer 相談員ページ（複数タブ対応版）が開始されました');
-        
-        // ページの一意識別子を生成（複数タブ識別用）
-        const pageId = 'counselor-' + Math.random().toString(36).substr(2, 9);
-        const startTime = Date.now();
-        console.log(`🆔 ページID: ${pageId}`);
-        console.log(`🕐 起動時刻: ${new Date().toLocaleString()}`);
-        
-        // 複数タブ対応のための変数
-        let isTabActive = true;
-        let lastActivityTime = Date.now();
-        let audioPlaybackLock = false;
+        console.log('🚀 SessionTimer 管理者ページ（問題調査版）が開始されました');
         
         // DOM要素の取得
         const totalTimerElement = document.getElementById('totalTimer');
@@ -334,317 +280,125 @@
         const connectionStatusElement = document.getElementById('connectionStatus');
         const soundToggle = document.getElementById('soundToggle');
         const soundStatus = document.getElementById('soundStatus');
-        const voiceMessageElement = document.getElementById('voiceMessage');
         
-        // 複数タブ対応：タブアクティブ状態の監視
-        function initTabCoordination() {
-            // タブの表示/非表示を監視
-            document.addEventListener('visibilitychange', () => {
-                isTabActive = !document.hidden;
-                const timestamp = new Date().toLocaleTimeString();
-                
-                if (isTabActive) {
-                    console.log(`👁️ [${timestamp}] [${pageId}] タブがアクティブになりました`);
-                    lastActivityTime = Date.now();
-                } else {
-                    console.log(`😴 [${timestamp}] [${pageId}] タブが非アクティブになりました`);
-                }
-            });
-            
-            // ウィンドウフォーカス監視
-            window.addEventListener('focus', () => {
-                isTabActive = true;
-                lastActivityTime = Date.now();
-                console.log(`🎯 [${pageId}] ウィンドウフォーカス取得`);
-            });
-            
-            window.addEventListener('blur', () => {
-                console.log(`😐 [${pageId}] ウィンドウフォーカス喪失`);
-            });
-        }
-        
-        // 複数タブ対応：音声再生権の管理
-        function requestAudioPlayback(audioType) {
-            const key = 'sessiontimer_audio_lock';
-            const now = Date.now();
-            
-            try {
-                // 既存のロック状況確認
-                const existingLock = localStorage.getItem(key);
-                if (existingLock) {
-                    const lockData = JSON.parse(existingLock);
-                    
-                    // 5秒以内の他のタブのロックがある場合は再生しない
-                    if (lockData.timestamp > now - 5000 && lockData.pageId !== pageId) {
-                        console.log(`🔒 [${pageId}] 他のタブ（${lockData.pageId}）が音声再生中のため、再生をスキップ`);
-                        return false;
-                    }
-                }
-                
-                // 音声再生権を取得
-                const lockData = {
-                    pageId: pageId,
-                    timestamp: now,
-                    audioType: audioType,
-                    isActive: isTabActive
-                };
-                
-                localStorage.setItem(key, JSON.stringify(lockData));
-                console.log(`🔓 [${pageId}] 音声再生権を取得: ${audioType}`);
-                
-                // 3秒後にロックを解除
-                setTimeout(() => {
-                    try {
-                        const currentLock = localStorage.getItem(key);
-                        if (currentLock) {
-                            const currentData = JSON.parse(currentLock);
-                            if (currentData.pageId === pageId && currentData.timestamp === now) {
-                                localStorage.removeItem(key);
-                                console.log(`🔓 [${pageId}] 音声再生ロックを解除`);
-                            }
-                        }
-                    } catch (e) {
-                        console.warn(`⚠️ [${pageId}] ロック解除エラー:`, e);
-                    }
-                }, 3000);
-                
-                return true;
-                
-            } catch (error) {
-                console.warn(`⚠️ [${pageId}] localStorage使用不可、音声再生を継続:`, error);
-                return true; // localStorage が使えない場合は再生を許可
-            }
-        }
-        
-        // 複数タブ対応：重複セッション開始検出の防止
-        function checkTabSpecificSessionStart(currentStatus, previousStatus) {
-            // アクティブなタブでのみセッション開始を検出
-            if (!isTabActive && voiceEnabled) {
-                console.log(`😴 [${pageId}] 非アクティブタブのため、セッション開始検出をスキップ`);
-                return false;
-            }
-            
-            // 最近のアクティビティがあるタブのみで処理
-            const timeSinceActivity = Date.now() - lastActivityTime;
-            if (timeSinceActivity > 10000) { // 10秒以上非アクティブ
-                console.log(`⏰ [${pageId}] 長時間非アクティブ（${Math.floor(timeSinceActivity/1000)}秒）のため、セッション開始検出をスキップ`);
-                return false;
-            }
-            
-            return true;
-        }
         let isConnected = false;
-        let voiceEnabled = false;
+        let pollInterval = null;
+        let audioInitialized = false;
+        let soundEnabled = false;
         let previousSessionTime = null;
-        let previousStatus = null;
+        let notifiedTimes = new Set();
         let notifiedTimes = new Set();
 
-        // Web Speech API
-        let speechSynthesis = window.speechSynthesis;
-        let voiceReady = false;
+        // 音声関連の変数
+        let audioContext = null;
+        let gainNode = null;
 
-        // 音声ファイルのパス
-        const audioFiles = {
-            start: '/sounds/counselor_start.wav',
-            min10: '/sounds/counselor_10min.wav',
-            min15: '/sounds/counselor_15min.wav',
-            min17: '/sounds/counselor_17min.wav',
-            min18: '/sounds/counselor_18min.wav',
-            min19: '/sounds/counselor_19min.wav',
-            min20: '/sounds/counselor_end.wav',
-            soundCheck: '/sounds/counselor_sound_check.wav'
-        };
-
-        // 音声メッセージのデータ
-        const voiceMessages = {
-            start: "まもなく相談者さんがいらっしゃいます。着席して待機をお願いします。",
-            min10: "10分が経過しました。相談の進行状況をご確認ください。",
-            min15: "15分が経過しました。残り時間は5分です。",
-            min17: "残り時間は3分です。まとめの準備をお願いします。",
-            min18: "残り時間は2分です。",
-            min19: "残り時間は1分です。",
-            min20: "お疲れ様でした。最後に忘れ物がないかもう一度確認してください。不明な点があれば受付にて承ります。",
-            soundCheck: "音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。"
-        };
-
-        // 音声ファイルの事前読み込み
-        const audioCache = {};
-        
-        function preloadAudioFiles() {
-            console.log('🎵 音声ファイルの事前読み込みを開始');
-            
-            Object.keys(audioFiles).forEach(key => {
-                const audio = new Audio();
-                audio.preload = 'auto';
-                audio.src = audioFiles[key];
-                audio.volume = 0.8;
-                
-                audio.addEventListener('canplaythrough', () => {
-                    console.log(`✅ 音声ファイル読み込み完了: ${key} (${audioFiles[key]})`);
-                });
-                
-                audio.addEventListener('error', (e) => {
-                    console.error(`❌ 音声ファイル読み込み失敗: ${key} (${audioFiles[key]})`, e);
-                });
-                
-                // 読み込み状況を定期チェック
-                audio.addEventListener('loadstart', () => {
-                    console.log(`🔄 音声ファイル読み込み開始: ${key}`);
-                });
-                
-                audioCache[key] = audio;
-            });
-            
-            console.log(`🎵 ${Object.keys(audioFiles).length}個の音声ファイル読み込みを開始しました`);
-        }
-
-        // WAVファイルによる音声再生（複数タブ対応版）
-        function playAudioFile(key, callback = null) {
-            if (!voiceEnabled) {
-                console.log(`🔇 [${pageId}] 音声無効のため再生をスキップ`);
-                return;
-            }
-
-            // 複数タブでの音声再生権チェック
-            if (!requestAudioPlayback(key)) {
-                console.log(`🔒 [${pageId}] 音声再生権を取得できないため、再生をスキップ: ${key}`);
-                return;
-            }
-
-            const audio = audioCache[key];
-            if (!audio) {
-                console.error(`❌ [${pageId}] 音声ファイル未登録: ${key}`);
-                console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
-                speakJapanese(voiceMessages[key], callback);
-                return;
-            }
-
+        // 音声通知の初期化（改善版）
+        async function initializeAudio() {
             try {
-                // メッセージを画面に表示
-                showVoiceMessage(voiceMessages[key]);
-
-                // 音声再生の準備
-                audio.currentTime = 0; // 最初から再生
+                console.log('🔊 音声初期化を開始');
                 
-                // 音量確認
-                if (audio.volume < 0.5) {
-                    audio.volume = 0.8;
-                    console.log(`🔊 [${pageId}] 音量を0.8に調整`);
+                // AudioContextの作成
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // GainNodeの作成（音量調整用）
+                gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                
+                // モバイルの場合、ユーザーインタラクション後にresumeが必要
+                if (audioContext.state === 'suspended') {
+                    console.log('📱 AudioContext suspended - ユーザーインタラクション待ち');
                 }
                 
-                const playPromise = audio.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        console.log(`🎵 [${pageId}] 音声ファイル再生開始: ${key} (${audioFiles[key]})`);
-                    }).catch((error) => {
-                        console.error(`❌ [${pageId}] 音声ファイル再生エラー: ${key}`, error);
-                        console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
-                        speakJapanese(voiceMessages[key], callback);
-                    });
-                }
-
-                audio.onended = () => {
-                    console.log(`✅ [${pageId}] 音声ファイル再生完了: ${key}`);
-                    if (callback) callback();
-                };
-
-            } catch (error) {
-                console.error(`❌ [${pageId}] 音声ファイル再生失敗: ${key}`, error);
-                console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
-                speakJapanese(voiceMessages[key], callback);
-            }
-        }
-
-        // 音声合成の初期化
-        function initializeVoice() {
-            try {
-                if ('speechSynthesis' in window) {
-                    // 日本語音声の準備
-                    const voices = speechSynthesis.getVoices();
-                    console.log('🎙️ 利用可能な音声:', voices.length);
-                    voiceReady = true;
-                    return true;
-                } else {
-                    console.error('❌ Web Speech API not supported');
-                    return false;
-                }
+                audioInitialized = true;
+                console.log('✅ 音声システム初期化完了');
+                return true;
             } catch (error) {
                 console.error('❌ 音声初期化エラー:', error);
                 return false;
             }
         }
 
-        // 日本語音声の再生（複数タブ対応版）
-        function speakJapanese(text, callback = null) {
-            if (!voiceEnabled || !voiceReady) {
-                console.log(`🔇 [${pageId}] 音声無効または未対応`);
+        // AudioContextのresume（ユーザーインタラクション後）
+        async function resumeAudioContext() {
+            if (audioContext && audioContext.state === 'suspended') {
+                try {
+                    await audioContext.resume();
+                    console.log('✅ AudioContext resumed');
+                } catch (error) {
+                    console.error('❌ AudioContext resume error:', error);
+                }
+            }
+        }
+
+        // 改善されたビープ音生成
+        function playBeep(count = 1, frequency = 800, duration = 200, interval = 300) {
+            if (!soundEnabled || !audioInitialized || !audioContext) {
+                console.log('🔇 音声無効または未初期化');
                 return;
             }
 
-            try {
-                // メッセージを画面に表示
-                showVoiceMessage(text);
+            // AudioContextをresumeする
+            resumeAudioContext();
 
-                // 音声合成
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ja-JP';
-                utterance.rate = 0.9; // 少しゆっくり
-                utterance.pitch = 1.0;
-                utterance.volume = 0.8;
+            console.log(`🔊 ビープ音再生開始: ${count}回, ${frequency}Hz`);
 
-                // 日本語音声を選択
-                const voices = speechSynthesis.getVoices();
-                const japaneseVoice = voices.find(voice => voice.lang.includes('ja'));
-                if (japaneseVoice) {
-                    utterance.voice = japaneseVoice;
-                }
-
-                utterance.onstart = () => {
-                    console.log(`🎙️ [${pageId}] Web Speech API 音声再生開始:`, text);
-                };
-
-                utterance.onend = () => {
-                    console.log(`✅ [${pageId}] Web Speech API 音声再生完了`);
-                    if (callback) callback();
-                };
-
-                utterance.onerror = (event) => {
-                    console.error(`❌ [${pageId}] Web Speech API 音声再生エラー:`, event.error);
-                };
-
-                speechSynthesis.speak(utterance);
-            } catch (error) {
-                console.error(`❌ [${pageId}] Web Speech API 音声再生失敗:`, error);
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    try {
+                        const oscillator = audioContext.createOscillator();
+                        const localGain = audioContext.createGain();
+                        
+                        oscillator.connect(localGain);
+                        localGain.connect(gainNode);
+                        
+                        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                        oscillator.type = 'sine';
+                        
+                        // エンベロープ（音の立ち上がり・立ち下がり）
+                        localGain.gain.setValueAtTime(0, audioContext.currentTime);
+                        localGain.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.01);
+                        localGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + duration / 1000);
+                        
+                        console.log(`🎵 ビープ${i + 1}/${count} 再生`);
+                    } catch (error) {
+                        console.error(`❌ ビープ${i + 1} 再生エラー:`, error);
+                    }
+                }, i * interval);
             }
         }
 
-        // 音声メッセージの画面表示
-        function showVoiceMessage(text) {
-            voiceMessageElement.textContent = text;
-            voiceMessageElement.classList.add('show');
-            
-            // 5秒後に非表示
-            setTimeout(() => {
-                voiceMessageElement.classList.remove('show');
-            }, 5000);
-        }
-
         // 音声通知の切り替え
-        function toggleVoice() {
-            voiceEnabled = !voiceEnabled;
-            updateVoiceUI();
-            
-            if (voiceEnabled) {
-                console.log(`🎙️ [${pageId}] 音声案内をONにしました`);
+        function toggleSound() {
+            if (!audioInitialized) {
+                initializeAudio().then(success => {
+                    if (success) {
+                        soundEnabled = true;
+                        updateSoundUI();
+                        // テスト音を再生
+                        playBeep(1, 800, 200);
+                    }
+                });
             } else {
-                console.log(`🔇 [${pageId}] 音声案内をOFFにしました`);
+                soundEnabled = !soundEnabled;
+                updateSoundUI();
+                
+                if (soundEnabled) {
+                    // 有効にした時のテスト音
+                    resumeAudioContext().then(() => {
+                        playBeep(1, 800, 200);
+                    });
+                }
             }
         }
 
         // 音声UIの更新
-        function updateVoiceUI() {
-            if (voiceEnabled) {
+        function updateSoundUI() {
+            if (soundEnabled) {
                 soundToggle.classList.add('active');
                 soundStatus.textContent = 'ON';
                 soundStatus.className = 'sound-status enabled';
@@ -655,90 +409,35 @@
             }
         }
 
-        // セッション時間に基づく音声案内（複数タブ対応版）
-        function checkSessionNotifications(currentSessionTime, isPaused) {
-            if (!voiceEnabled) return;
+        // セッション時間に基づく音声通知
+        function checkSessionNotifications(currentSessionTime) {
+            if (!soundEnabled || !audioInitialized) return;
 
             const elapsedTime = 1200 - currentSessionTime; // 経過時間（秒）
+            const elapsedMinutes = Math.floor(elapsedTime / 60);
+            const elapsedSeconds = elapsedTime % 60;
             
             // 通知タイミング（経過時間ベース）
             const notifications = [
-                { time: 600, key: 'min10' },   // 10分経過
-                { time: 900, key: 'min15' },   // 15分経過
-                { time: 1020, key: 'min17' },  // 17分経過
-                { time: 1080, key: 'min18' },  // 18分経過
-                { time: 1140, key: 'min19' },  // 19分経過
-                { time: 1200, key: 'min20' }   // 20分経過
+                { time: 600, beeps: 1 },   // 10分経過
+                { time: 900, beeps: 2 },   // 15分経過
+                { time: 1020, beeps: 3 },  // 17分経過
+                { time: 1080, beeps: 4 },  // 18分経過
+                { time: 1140, beeps: 5 },  // 19分経過
+                { time: 1200, beeps: 6 }   // 20分経過
             ];
 
             notifications.forEach(notification => {
-                if (elapsedTime >= notification.time && !notifiedTimes.has(notification.time) && !isPaused) {
-                    // アクティブなタブでのみ音声案内を実行
-                    if (!isTabActive) {
-                        console.log(`😴 [${pageId}] 非アクティブタブのため音声案内をスキップ: ${notification.key}`);
-                        notifiedTimes.add(notification.time); // 通知済みとしてマーク
-                        return;
-                    }
+                if (elapsedTime >= notification.time && !notifiedTimes.has(notification.time)) {
+                    const remainingTime = Math.max(0, currentSessionTime);
+                    const remainingMinutes = Math.floor(remainingTime / 60);
+                    const remainingSeconds = remainingTime % 60;
                     
-                    const timeSinceActivity = Date.now() - lastActivityTime;
-                    if (timeSinceActivity > 5000) { // 5秒以上非アクティブ
-                        console.log(`⏰ [${pageId}] 非アクティブ状態のため音声案内をスキップ: ${notification.key}`);
-                        notifiedTimes.add(notification.time);
-                        return;
-                    }
-                    
-                    console.log(`🔔 [${pageId}] 音声案内実行: ${notification.key} (アクティブタブ)`);
-                    playAudioFile(notification.key);
+                    console.log(`🔔 通知: ${elapsedMinutes}分${elapsedSeconds}秒経過, 残り${remainingMinutes}分${remainingSeconds}秒 (${notification.beeps}回ビープ)`);
+                    playBeep(notification.beeps, 800, 200, 400);
                     notifiedTimes.add(notification.time);
-                    
-                    // アニメーション効果
-                    sessionTimerElement.classList.add('timer-pulse');
-                    setTimeout(() => {
-                        sessionTimerElement.classList.remove('timer-pulse');
-                    }, 2000);
                 }
             });
-        }
-
-        // セッション開始の検出（複数タブ対応版）
-        function checkSessionStart(currentStatus, previousStatus) {
-            const timestamp = new Date().toLocaleTimeString();
-            
-            console.log(`🔍 [${timestamp}] [${pageId}] セッション開始チェック:`);
-            console.log(`   音声有効: ${voiceEnabled}`);
-            console.log(`   前回ステータス: "${previousStatus}"`);
-            console.log(`   現在ステータス: "${currentStatus}"`);
-            console.log(`   タブアクティブ: ${isTabActive}`);
-            console.log(`   最終アクティビティ: ${Math.floor((Date.now() - lastActivityTime) / 1000)}秒前`);
-            
-            // 複数タブでの重複セッション開始検出を防止
-            if (!checkTabSpecificSessionStart(currentStatus, previousStatus)) {
-                return;
-            }
-            
-            if (voiceEnabled && previousStatus === '一時停止中' && currentStatus === '実行中') {
-                console.log(`🔔 ✅ [${pageId}] タイマー開始を検出しました！（アクティブタブ）`);
-                console.log(`🎵 [${pageId}] 開始案内ファイルを再生: counselor_start.wav`);
-                
-                // タイマー開始時は必ずcounselor_start.wavを再生
-                if (audioCache['start']) {
-                    playAudioFile('start');
-                } else {
-                    console.log(`⚠️ [${pageId}] 開始案内ファイル未読み込み - Web Speech APIで代替`);
-                    if (requestAudioPlayback('start-speech')) {
-                        speakJapanese(voiceMessages.start);
-                    }
-                }
-                
-                notifiedTimes.clear(); // 通知履歴をクリア
-                console.log(`🔄 [${pageId}] 通知履歴をクリアしました`);
-            } else {
-                if (!voiceEnabled) {
-                    console.log(`🔇 [${pageId}] 音声無効のため開始案内をスキップ`);
-                } else if (previousStatus !== '一時停止中' || currentStatus !== '実行中') {
-                    console.log(`❌ [${pageId}] 開始条件不一致のため開始案内をスキップ`);
-                }
-            }
         }
 
         // 時間フォーマット関数
@@ -756,77 +455,68 @@
 
         // タイマー状態の更新
         function updateTimerDisplay(data) {
-            const currentStatus = data.isPaused ? '一時停止中' : '実行中';
-            
-            // ステータス変更の詳細ログ
-            if (previousStatus !== currentStatus) {
-                const timestamp = new Date().toLocaleTimeString();
-                console.log(`🔄 [${timestamp}] [${pageId}] ステータス変更検出:`);
-                console.log(`   前回: "${previousStatus}" → 今回: "${currentStatus}"`);
-                console.log(`   データ: isPaused=${data.isPaused}, sessionTime=${data.sessionTime}, totalTime=${data.totalTime}`);
-                
-                // セッション開始の検出
-                checkSessionStart(currentStatus, previousStatus);
-                
-                previousStatus = currentStatus;
-            }
-            
-            // セッション時間変更の詳細ログ
             if (data.sessionTime !== previousSessionTime) {
-                const elapsedTime = 1200 - data.sessionTime;
-                const elapsedMinutes = Math.floor(elapsedTime / 60);
-                const elapsedSeconds = elapsedTime % 60;
-                
-                console.log(`⏱️ セッション時間変更: ${previousSessionTime}秒 → ${data.sessionTime}秒 (経過: ${elapsedMinutes}分${elapsedSeconds}秒)`);
-                
-                checkSessionNotifications(data.sessionTime, data.isPaused);
+                checkSessionNotifications(data.sessionTime);
                 previousSessionTime = data.sessionTime;
             }
             
-            // UI更新
             sessionTimerElement.textContent = formatTime(data.sessionTime);
             totalTimerElement.textContent = formatTime(data.totalTime);
-            statusElement.textContent = `ステータス: ${currentStatus}`;
+            statusElement.textContent = `ステータス: ${data.isPaused ? '一時停止中' : '実行中'}`;
         }
 
         // 接続状態の更新
         function updateConnectionStatus(status) {
-            const timestamp = new Date().toLocaleTimeString();
-            console.log(`📡 [${timestamp}] [${pageId}] 相談員ページ：接続状態更新 -> ${status}`);
+            console.log(`📡 管理者ページ：接続状態更新 -> ${status}`);
             
-            connectionStatusElement.className = `connection-status ${status}`;
-            connectionStatusElement.textContent = 
-                status === 'connected' ? '接続済み' :
-                status === 'connecting' ? '接続中...' : '接続エラー';
+            const element = connectionStatusElement;
+            if (!element) {
+                console.error('❌ 管理者ページ：接続状態要素が見つかりません');
+                return;
+            }
+            
+            // クラスをクリアしてから新しいクラスを設定
+            element.className = `connection-status ${status}`;
+            
+            // テキストを設定
+            switch(status) {
+                case 'connected':
+                    element.textContent = '接続済み';
+                    console.log('✅ 管理者ページ：接続済み状態に更新');
+                    break;
+                case 'connecting':
+                    element.textContent = '接続中...';
+                    console.log('🔄 管理者ページ：接続中状態に更新');
+                    break;
+                case 'error':
+                    element.textContent = '接続エラー';
+                    console.log('❌ 管理者ページ：エラー状態に更新');
+                    break;
+                default:
+                    element.textContent = '不明';
+                    console.log('❓ 管理者ページ：不明状態');
+            }
         }
 
         // API呼び出し
         async function fetchTimerState() {
             try {
-                const startTime = Date.now();
                 const response = await fetch('/api/timer');
-                const fetchTime = Date.now() - startTime;
-                
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
-                
-                // API取得の詳細ログ（3秒に1回のみ出力して負荷軽減）
-                if (Math.floor(Date.now() / 3000) !== Math.floor((Date.now() - 1000) / 3000)) {
-                    console.log(`📡 [${pageId}] API取得 (${fetchTime}ms): isPaused=${data.isPaused}, sessionTime=${data.sessionTime}, totalTime=${data.totalTime}`);
-                }
-                
                 updateTimerDisplay(data);
                 
+                // 接続状態の更新を確実に行う
                 if (!isConnected) {
                     isConnected = true;
                     updateConnectionStatus('connected');
-                    console.log(`🌐 [${pageId}] 相談員ページ：サーバーに接続しました`);
+                    console.log('🌐 管理者ページ：サーバーに接続しました');
                 }
                 
                 return data;
             } catch (error) {
-                console.error(`❌ [${pageId}] 相談員ページ API取得エラー:`, error);
+                console.error('❌ 管理者ページ API取得エラー:', error);
                 if (isConnected) {
                     isConnected = false;
                     updateConnectionStatus('error');
@@ -835,154 +525,398 @@
             }
         }
 
-        // テスト関数
-        function testVoice() {
-            if (!voiceEnabled) {
-                alert('音声案内をONにしてください');
-                return;
-            }
-            console.log(`🎙️ [${pageId}] 音声テスト実行`);
-            if (audioCache['soundCheck']) {
-                playAudioFile('soundCheck');
-            } else {
-                speakJapanese("音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。");
+        // 制御関数（デバッグ強化版）
+        async function startTimer() {
+            const timestamp = new Date().toLocaleTimeString();
+            const stack = new Error().stack;
+            console.log(`⚠️ [${timestamp}] 🚨 startTimer() 呼び出し検出！`);
+            console.log(`📞 呼び出し元スタックトレース:`, stack);
+            
+            await resumeAudioContext();
+            try {
+                const response = await fetch('/api/timer/start', { method: 'POST' });
+                if (response.ok) {
+                    notifiedTimes.clear(); // 通知履歴をクリア
+                    console.log(`✅ [${timestamp}] ▶️ タイマー開始 API呼び出し成功`);
+                } else {
+                    console.error(`❌ [${timestamp}] タイマー開始 API呼び出し失敗:`, response.status);
+                }
+            } catch (error) {
+                console.error(`❌ [${timestamp}] タイマー開始 エラー:`, error);
             }
         }
 
-        function showDebugInfo() {
-            const loadedFiles = Object.keys(audioCache).filter(key => {
-                const audio = audioCache[key];
-                return audio && audio.readyState >= 3; // HAVE_FUTURE_DATA以上
-            });
+        async function pauseTimer() {
+            const timestamp = new Date().toLocaleTimeString();
+            const stack = new Error().stack;
+            console.log(`⚠️ [${timestamp}] 🚨 pauseTimer() 呼び出し検出！`);
+            console.log(`📞 呼び出し元スタックトレース:`, stack);
             
-            const timestamp = new Date().toLocaleString();
-            const uptime = Math.floor((Date.now() - startTime) / 1000);
-            const timeSinceActivity = Math.floor((Date.now() - lastActivityTime) / 1000);
-            
-            // 他のタブ情報を取得
-            let otherTabsInfo = '不明';
             try {
-                const lockData = localStorage.getItem('sessiontimer_audio_lock');
-                if (lockData) {
-                    const lock = JSON.parse(lockData);
-                    otherTabsInfo = `${lock.pageId} (${lock.audioType})`;
+                const response = await fetch('/api/timer/pause', { method: 'POST' });
+                if (response.ok) {
+                    console.log(`✅ [${timestamp}] ⏸️ タイマー一時停止 API呼び出し成功`);
                 } else {
-                    otherTabsInfo = 'なし';
+                    console.error(`❌ [${timestamp}] タイマー一時停止 API呼び出し失敗:`, response.status);
                 }
-            } catch (e) {
-                otherTabsInfo = 'localStorage未対応';
+            } catch (error) {
+                console.error(`❌ [${timestamp}] タイマー一時停止 エラー:`, error);
             }
+        }
+
+        async function resetTimer() {
+            const timestamp = new Date().toLocaleTimeString();
+            const stack = new Error().stack;
+            console.log(`⚠️ [${timestamp}] 🚨 resetTimer() 呼び出し検出！`);
+            console.log(`📞 呼び出し元スタックトレース:`, stack);
+            
+            try {
+                const response = await fetch('/api/timer/reset', { method: 'POST' });
+                if (response.ok) {
+                    notifiedTimes.clear();
+                    console.log(`✅ [${timestamp}] 🔄 タイマーリセット API呼び出し成功`);
+                } else {
+                    console.error(`❌ [${timestamp}] タイマーリセット API呼び出し失敗:`, response.status);
+                }
+            } catch (error) {
+                console.error(`❌ [${timestamp}] タイマーリセット エラー:`, error);
+            }
+        }
+
+        async function nextSession() {
+            const timestamp = new Date().toLocaleTimeString();
+            const stack = new Error().stack;
+            console.log(`⚠️ [${timestamp}] 🚨 nextSession() 呼び出し検出！`);
+            console.log(`📞 呼び出し元スタックトレース:`, stack);
+            
+            try {
+                const response = await fetch('/api/timer/next', { method: 'POST' });
+                if (response.ok) {
+                    notifiedTimes.clear();
+                    console.log(`✅ [${timestamp}] ⏭️ 次のセッション API呼び出し成功`);
+                } else {
+                    console.error(`❌ [${timestamp}] 次のセッション API呼び出し失敗:`, response.status);
+                }
+            } catch (error) {
+                console.error(`❌ [${timestamp}] 次のセッション エラー:`, error);
+            }
+        }
+
+        // テスト関数
+        async function testSound() {
+            await resumeAudioContext();
+            if (!soundEnabled) {
+                alert('音声通知をONにしてください');
+                return;
+            }
+            console.log('🔊 音声テスト実行');
+            playBeep(3, 800, 200, 400);
+        }
+
+        function showDebugInfo() {
+            const timestamp = new Date().toLocaleString();
+            
+            // イベントリスナーの状況確認
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const hasStartListener = startBtn && startBtn.onclick !== null;
+            const hasPauseListener = pauseBtn && pauseBtn.onclick !== null;
             
             const info = `
-🆔 ページID: ${pageId}
+🔍 管理者ページ問題調査情報
 🕐 現在時刻: ${timestamp}
-⏰ 稼働時間: ${uptime}秒
-👁️ タブアクティブ: ${isTabActive ? 'はい' : 'いいえ'}
-🕰️ 最終アクティビティ: ${timeSinceActivity}秒前
-🔒 音声ロック状況: ${otherTabsInfo}
-🎙️ 音声状態: ${voiceEnabled ? 'ON' : 'OFF'}
-🔊 Speech API: ${voiceReady ? '対応' : '未対応'}
-📊 前回ステータス: "${previousStatus || 'なし'}"
-⏱️ 前回セッション時間: ${previousSessionTime || 'なし'}秒
+🔊 音声状態: ${soundEnabled ? 'ON' : 'OFF'}
+🎛️ AudioContext: ${audioContext ? audioContext.state : 'なし'}
 🔔 通知履歴: ${Array.from(notifiedTimes).join(', ') || 'なし'}
 🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}
-📱 ユーザーエージェント: ${navigator.userAgent.includes('Mobile') ? 'モバイル' : 'デスクトップ'}
-🎵 音声ファイル: ${Object.keys(audioCache).length}個中${loadedFiles.length}個読み込み済み
-📁 読み込み済みファイル: ${loadedFiles.join(', ') || 'なし'}
+📊 ボタン状況:
+  - STARTボタン存在: ${startBtn ? 'あり' : 'なし'}
+  - PAUSEボタン存在: ${pauseBtn ? 'あり' : 'なし'}
+  - onclickハンドラ: ${hasStartListener || hasPauseListener ? '検出' : 'なし'}
+🎯 イベント監視: アクティブ
+📝 API呼び出し追跡: アクティブ
             `;
             alert(info);
             
             // コンソールにも詳細情報を出力
-            console.log(`📊 [${pageId}] 詳細デバッグ情報:`);
+            console.log('📊 🚨 問題調査用詳細デバッグ情報:');
             console.log(`🕐 タイムスタンプ: ${timestamp}`);
-            console.log(`⏰ 稼働時間: ${uptime}秒`);
-            console.log(`👁️ タブアクティブ: ${isTabActive}`);
-            console.log(`🕰️ 最終アクティビティ: ${timeSinceActivity}秒前`);
-            console.log(`🔒 音声ロック状況: ${otherTabsInfo}`);
-            console.log(`📊 前回ステータス: ${previousStatus}`);
-            console.log(`⏱️ 前回セッション時間: ${previousSessionTime}`);
+            console.log(`🔊 音声状態: ${soundEnabled ? 'ON' : 'OFF'}`);
+            console.log(`🎛️ AudioContext状態: ${audioContext ? audioContext.state : 'なし'}`);
             console.log(`🔔 通知履歴: ${Array.from(notifiedTimes)}`);
-            console.log(`🎵 音声ファイル詳細:`);
-            Object.keys(audioCache).forEach(key => {
-                const audio = audioCache[key];
-                console.log(`  ${key}: readyState=${audio.readyState}, src=${audio.src}`);
-            });
+            console.log(`🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}`);
+            console.log('📊 DOM要素状況:');
+            console.log(`  - startBtn: ${startBtn ? '存在' : '未存在'}`);
+            console.log(`  - pauseBtn: ${pauseBtn ? '存在' : '未存在'}`);
+            console.log(`  - resetBtn: ${document.getElementById('resetBtn') ? '存在' : '未存在'}`);
+            console.log(`  - nextBtn: ${document.getElementById('nextBtn') ? '存在' : '未存在'}`);
+            console.log('🎯 JavaScript関数の存在確認:');
+            console.log(`  - startTimer: ${typeof startTimer === 'function' ? '存在' : '未存在'}`);
+            console.log(`  - pauseTimer: ${typeof pauseTimer === 'function' ? '存在' : '未存在'}`);
+            console.log(`  - resetTimer: ${typeof resetTimer === 'function' ? '存在' : '未存在'}`);
+            console.log(`  - nextSession: ${typeof nextSession === 'function' ? '存在' : '未存在'}`);
+            
+            // グローバルオブジェクトのチェック
+            console.log('🌐 グローバルオブジェクトチェック:');
+            if (window.startTimer && window.startTimer !== startTimer) {
+                console.warn('⚠️ グローバルに異なるstartTimer関数が存在！');
+            }
+            if (window.pauseTimer && window.pauseTimer !== pauseTimer) {
+                console.warn('⚠️ グローバルに異なるpauseTimer関数が存在！');
+            }
         }
 
-        // イベントリスナー
-        soundToggle.addEventListener('click', toggleVoice);
+        async function forceNotification() {
+            await resumeAudioContext();
+            if (!soundEnabled) {
+                alert('音声通知をONにしてください');
+                return;
+            }
+            console.log('🚨 強制通知テスト');
+            playBeep(5, 1000, 300, 500);
+        }
 
-        // 音声リストの読み込み完了を待つ
-        speechSynthesis.onvoiceschanged = () => {
-            initializeVoice();
-        };
+        // 接続テスト機能
+        async function testConnection() {
+            console.log('🌐 管理者ページ：手動接続テスト開始');
+            updateConnectionStatus('connecting');
+            
+            try {
+                const response = await fetch('/api/timer');
+                console.log('📡 管理者ページ：API応答ステータス:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 管理者ページ：取得データ:', data);
+                
+                updateTimerDisplay(data);
+                isConnected = true;
+                updateConnectionStatus('connected');
+                
+                alert('✅ 接続テスト成功！\nサーバーとの通信は正常です。');
+                
+            } catch (error) {
+                console.error('❌ 管理者ページ：接続テストエラー:', error);
+                isConnected = false;
+                updateConnectionStatus('error');
+                alert(`❌ 接続テスト失敗\nエラー: ${error.message}`);
+            }
+        }
 
-        // ページ読み込み後の初期化（複数タブ対応版）
+        // イベントリスナーの設定（デバッグ強化版）
+        function setupEventListeners() {
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const soundTestBtn = document.getElementById('soundTestBtn');
+            const debugBtn = document.getElementById('debugBtn');
+            const forceNotifyBtn = document.getElementById('forceNotifyBtn');
+            const connectionTestBtn = document.getElementById('connectionTestBtn');
+            
+            console.log('🎛️ イベントリスナーを設定開始');
+            
+            if (startBtn) {
+                startBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] STARTボタンクリック検出`);
+                    console.log(`📍 イベント詳細:`, {
+                        target: event.target.textContent,
+                        type: event.type,
+                        isTrusted: event.isTrusted,
+                        eventPhase: event.eventPhase
+                    });
+                    startTimer();
+                });
+                console.log('✅ STARTボタンのイベントリスナー設定完了');
+            }
+            
+            if (pauseBtn) {
+                pauseBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] PAUSEボタンクリック検出`);
+                    console.log(`📍 イベント詳細:`, {
+                        target: event.target.textContent,
+                        type: event.type,
+                        isTrusted: event.isTrusted,
+                        eventPhase: event.eventPhase
+                    });
+                    pauseTimer();
+                });
+                console.log('✅ PAUSEボタンのイベントリスナー設定完了');
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] RESETボタンクリック検出`);
+                    console.log(`📍 イベント詳細:`, {
+                        target: event.target.textContent,
+                        type: event.type,
+                        isTrusted: event.isTrusted,
+                        eventPhase: event.eventPhase
+                    });
+                    resetTimer();
+                });
+                console.log('✅ RESETボタンのイベントリスナー設定完了');
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] NEXTボタンクリック検出`);
+                    console.log(`📍 イベント詳細:`, {
+                        target: event.target.textContent,
+                        type: event.type,
+                        isTrusted: event.isTrusted,
+                        eventPhase: event.eventPhase
+                    });
+                    nextSession();
+                });
+                console.log('✅ NEXTボタンのイベントリスナー設定完了');
+            }
+            
+            // 音声トグルのイベントリスナー
+            if (soundToggle) {
+                soundToggle.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] 音声トグルクリック検出`);
+                    console.log(`📍 イベント詳細:`, {
+                        type: event.type,
+                        isTrusted: event.isTrusted
+                    });
+                    toggleSound();
+                });
+                console.log('✅ 音声トグルのイベントリスナー設定完了');
+            }
+            
+            // テストボタンのイベントリスナー
+            if (soundTestBtn) {
+                soundTestBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] 音声テストボタンクリック検出`);
+                    testSound();
+                });
+                console.log('✅ 音声テストボタンのイベントリスナー設定完了');
+            }
+            
+            if (debugBtn) {
+                debugBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] デバッグボタンクリック検出`);
+                    showDebugInfo();
+                });
+                console.log('✅ デバッグボタンのイベントリスナー設定完了');
+            }
+            
+            if (forceNotifyBtn) {
+                forceNotifyBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] 強制通知ボタンクリック検出`);
+                    forceNotification();
+                });
+                console.log('✅ 強制通知ボタンのイベントリスナー設定完了');
+            }
+            
+            if (connectionTestBtn) {
+                connectionTestBtn.addEventListener('click', (event) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`🖱️ [${timestamp}] 接続テストボタンクリック検出`);
+                    testConnection();
+                });
+                console.log('✅ 接続テストボタンのイベントリスナー設定完了');
+            }
+            
+            console.log('🎛️ 全イベントリスナー設定完了');
+        }
+        
+        // 予期しないイベントの監視
+        function setupUnexpectedEventMonitoring() {
+            console.log('👁️ 予期しないイベント監視を開始');
+            
+            // 全体的なキーボードイベント監視
+            document.addEventListener('keydown', (event) => {
+                if (event.key === ' ' || event.key === 'Enter') {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`⌨️ [${timestamp}] キーボードイベント検出:`, {
+                        key: event.key,
+                        code: event.code,
+                        target: event.target.tagName,
+                        isTrusted: event.isTrusted
+                    });
+                }
+            });
+            
+            // フォーカスイベント監視
+            document.addEventListener('focusin', (event) => {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log(`🎯 [${timestamp}] フォーカスイン:`, {
+                    target: event.target.tagName,
+                    id: event.target.id,
+                    className: event.target.className
+                });
+            });
+            
+            // 全体的なクリックイベント監視
+            document.addEventListener('click', (event) => {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log(`👆 [${timestamp}] 全体クリック検出:`, {
+                    target: event.target.tagName,
+                    id: event.target.id,
+                    className: event.target.className,
+                    textContent: event.target.textContent.substring(0, 20),
+                    isTrusted: event.isTrusted
+                });
+            }, true); // キャプチャフェーズで監視
+            
+            console.log('👁️ 予期しないイベント監視設定完了');
+        }
+
+        // ページ読み込み後の初期化
         document.addEventListener('DOMContentLoaded', async () => {
-            const timestamp = new Date().toLocaleString();
-            console.log(`📱 [${timestamp}] [${pageId}] 相談員ページ（複数タブ対応版）読み込み完了`);
-            console.log(`🎯 [${pageId}] SessionTimer音声機能付き相談員ページを初期化します`);
+            console.log('📱 管理者ページ読み込み完了');
+            console.log('🔍 問題調査用デバッグ版を開始します');
             
-            // 複数タブ協調機能の初期化
-            initTabCoordination();
-            console.log(`🤝 [${pageId}] 複数タブ協調機能を初期化`);
-            
-            // 初期状態の記録
-            console.log(`📊 [${pageId}] 初期状態:`);
-            console.log(`   previousStatus: "${previousStatus}"`);
-            console.log(`   previousSessionTime: ${previousSessionTime}`);
-            console.log(`   voiceEnabled: ${voiceEnabled}`);
-            console.log(`   isConnected: ${isConnected}`);
-            console.log(`   isTabActive: ${isTabActive}`);
-            
-            // 音声ファイルの事前読み込み
-            preloadAudioFiles();
+            // 予期しないイベント監視を最初に設定
+            setupUnexpectedEventMonitoring();
             
             // 音声システムの準備
-            initializeVoice();
-            updateVoiceUI();
-            console.log(`🎙️ [${pageId}] 音声システム初期化完了`);
+            await initializeAudio();
+            updateSoundUI();
             
-            // 初期データ取得
+            // イベントリスナーの設定
+            setupEventListeners();
+            
+            // 接続状態を明示的に「接続中」に設定
             updateConnectionStatus('connecting');
-            try {
-                console.log(`🌐 [${pageId}] 初期データ取得を開始`);
-                await fetchTimerState();
-                console.log(`✅ [${pageId}] 初期データ取得成功`);
-            } catch (error) {
-                console.error(`❌ [${pageId}] 初期データ取得失敗:`, error);
-            }
+            console.log('🔄 管理者ページ：API接続を開始します');
+            
+            // 初期データ取得（少し遅延させて確実に実行）
+            setTimeout(async () => {
+                try {
+                    console.log('🌐 管理者ページ：初期データ取得を試行');
+                    await fetchTimerState();
+                    console.log('✅ 管理者ページ：初期データ取得成功');
+                } catch (error) {
+                    console.error('❌ 管理者ページ：初期データ取得失敗:', error);
+                    updateConnectionStatus('error');
+                }
+            }, 500);
             
             // ポーリング開始
             pollInterval = setInterval(async () => {
                 try {
                     await fetchTimerState();
-                    // アクティビティ時刻を更新
-                    if (isTabActive) {
-                        lastActivityTime = Date.now();
-                    }
                 } catch (error) {
-                    console.error(`❌ [${pageId}] ポーリングエラー:`, error);
+                    console.error('❌ 管理者ページ：ポーリングエラー:', error);
                 }
             }, 1000);
-            console.log(`🔄 [${pageId}] 1秒間隔でのポーリング開始`);
+            console.log('🔄 管理者ページ：ポーリング開始');
             
-            console.log(`🚀 [${new Date().toLocaleTimeString()}] [${pageId}] 相談員ページ（複数タブ対応版）の初期化が完了しました`);
-            
-            // 5秒後に複数タブ状況をレポート
-            setTimeout(() => {
-                try {
-                    const lockData = localStorage.getItem('sessiontimer_audio_lock');
-                    if (lockData) {
-                        const lock = JSON.parse(lockData);
-                        if (lock.pageId !== pageId) {
-                            console.log(`🔍 [${pageId}] 他のタブが検出されました: ${lock.pageId}`);
-                        }
-                    }
-                } catch (e) {
-                    console.log(`📝 [${pageId}] localStorage利用不可、単独動作モード`);
-                }
-            }, 5000);
+            console.log('🚀 管理者ページ（問題調査版）の初期化が完了しました');
         });
 
         // ページ離脱時のクリーンアップ
@@ -990,8 +924,8 @@
             if (pollInterval) {
                 clearInterval(pollInterval);
             }
-            if (speechSynthesis) {
-                speechSynthesis.cancel();
+            if (audioContext) {
+                audioContext.close();
             }
         });
     </script>
