@@ -65,10 +65,33 @@
             background: rgba(244, 67, 54, 0.3);
         }
 
-        .sync-info {
+        .sync-button {
             margin-top: 20px;
-            font-size: 0.9em;
-            opacity: 0.8;
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .sync-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(31, 38, 135, 0.4);
+        }
+
+        .sync-button:active {
+            transform: translateY(0);
+        }
+
+        .sync-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .pulse {
@@ -94,6 +117,22 @@
             border-radius: 10px;
             font-size: 1.1em;
         }
+
+        .last-sync {
+            margin-top: 10px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .syncing {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -102,11 +141,12 @@
         <div class="timer-display" id="timerDisplay">00:00:00</div>
         <div class="status disconnected" id="connectionStatus">接続中...</div>
         <div class="timer-state" id="timerState">待機中</div>
-        <div class="sync-info">
-            <span>次回同期: </span>
-            <span id="nextSync">--</span>
-            <span>秒後</span>
-        </div>
+        
+        <button class="sync-button" id="syncButton" onclick="manualSync()">
+            <span id="syncButtonText">🔄 手動同期</span>
+        </button>
+        
+        <div class="last-sync" id="lastSync">最終同期: --</div>
     </div>
 
     <script>
@@ -120,23 +160,22 @@
             currentTime: 0
         };
 
-        let syncInterval = null;
         let displayInterval = null;
-        let countdownInterval = null;
-        let nextSyncTime = 5;
+        let lastSyncTime = null;
 
         // 設定
         const API_BASE_URL = window.location.origin;
-        const SYNC_INTERVAL = 30000; // 2秒ごとに同期（Vercel用に短縮）
-        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新
+        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新（ローカル計算）
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
         const connectionStatus = document.getElementById('connectionStatus');
         const timerStateDisplay = document.getElementById('timerState');
-        const nextSyncDisplay = document.getElementById('nextSync');
+        const lastSyncDisplay = document.getElementById('lastSync');
+        const syncButton = document.getElementById('syncButton');
+        const syncButtonText = document.getElementById('syncButtonText');
 
-        // タイマー表示の更新
+        // タイマー表示の更新（ローカル計算）
         function updateDisplay() {
             if (timerState.isRunning && !timerState.isPaused) {
                 const now = Date.now();
@@ -159,6 +198,10 @@
 
         // サーバーとの同期
         async function syncWithServer() {
+            // ボタンを無効化
+            syncButton.disabled = true;
+            syncButtonText.innerHTML = '<span class="syncing">⟳</span> 同期中...';
+            
             try {
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
                     method: 'GET',
@@ -199,46 +242,76 @@
                 // 表示を更新
                 updateDisplay();
 
-                // 次回同期までのカウントダウンをリセット
-                nextSyncTime = 2;
+                // 最終同期時刻を更新
+                lastSyncTime = new Date();
+                updateLastSyncDisplay();
                 
             } catch (error) {
                 console.error('同期エラー:', error);
                 connectionStatus.textContent = '接続エラー';
                 connectionStatus.className = 'status disconnected';
+            } finally {
+                // ボタンを有効化
+                syncButton.disabled = false;
+                syncButtonText.innerHTML = '🔄 手動同期';
             }
         }
 
-        // カウントダウンの更新
-        function updateCountdown() {
-            nextSyncTime = Math.max(0, nextSyncTime - 1);
-            nextSyncDisplay.textContent = nextSyncTime;
+        // 最終同期時刻の表示を更新
+        function updateLastSyncDisplay() {
+            if (lastSyncTime) {
+                const now = new Date();
+                const diff = Math.floor((now - lastSyncTime) / 1000);
+                
+                if (diff < 60) {
+                    lastSyncDisplay.textContent = `最終同期: ${diff}秒前`;
+                } else if (diff < 3600) {
+                    const minutes = Math.floor(diff / 60);
+                    lastSyncDisplay.textContent = `最終同期: ${minutes}分前`;
+                } else {
+                    const hours = Math.floor(diff / 3600);
+                    lastSyncDisplay.textContent = `最終同期: ${hours}時間前`;
+                }
+            }
+        }
+
+        // 手動同期
+        function manualSync() {
+            console.log('手動同期を実行');
+            syncWithServer();
         }
 
         // 初期化
         function initialize() {
-            // 初回同期
+            // 起動時に1回だけ同期
             syncWithServer();
 
-            // 定期的な同期（Vercel対応：ポーリング方式）
-            syncInterval = setInterval(syncWithServer, SYNC_INTERVAL);
-
-            // 表示の定期更新
+            // 表示の定期更新（ローカル計算のみ）
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
 
-            // カウントダウンの更新
-            countdownInterval = setInterval(updateCountdown, 1000);
+            // 最終同期時刻の表示を定期更新
+            setInterval(updateLastSyncDisplay, 10000); // 10秒ごとに更新
         }
 
         // ページ表示/非表示の処理
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                // ページが非表示になったら更新を停止
+                // ページが非表示になったら表示更新を停止
                 clearInterval(displayInterval);
             } else {
-                // ページが表示されたら即座に同期して更新を再開
-                syncWithServer();
+                // ページが表示されたら同期して更新を再開
+                syncWithServer(); // 再表示時に同期
                 displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
+            }
+        });
+
+        // キーボードショートカット（Rキーで同期）
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey) { // ページリロードを防ぐ
+                    e.preventDefault();
+                    manualSync();
+                }
             }
         });
 
