@@ -311,7 +311,6 @@
     <div class="test-controls">
         <button class="test-btn voice-test-btn" onclick="testVoice()">🎙️ 音声テスト</button>
         <button class="test-btn debug-btn" onclick="showDebugInfo()">📊 デバッグ情報</button>
-        <button class="test-btn sound-test-btn" onclick="testStartMessage()">▶️ 開始案内テスト</button>
     </div>
 
     <script>
@@ -525,16 +524,6 @@
             
             if (voiceEnabled) {
                 console.log('🎙️ 音声案内をONにしました');
-                // 音声ON時は必ずcounselor_sound_check.wavを再生
-                setTimeout(() => {
-                    if (audioCache['soundCheck']) {
-                        console.log('🎵 音声確認ファイルを再生: counselor_sound_check.wav');
-                        playAudioFile('soundCheck');
-                    } else {
-                        console.log('⚠️ 音声確認ファイル未読み込み - Web Speech APIで代替');
-                        speakJapanese("音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。");
-                    }
-                }, 200); // 少し遅延して確実に実行
             } else {
                 console.log('🔇 音声案内をOFFにしました');
             }
@@ -682,15 +671,6 @@
             } else {
                 speakJapanese("音声案内システムのテストです。相談開始から終了まで、適切なタイミングでご案内いたします。");
             }
-        }
-
-        function testStartMessage() {
-            if (!voiceEnabled) {
-                alert('音声案内をONにしてください');
-                return;
-            }
-            console.log('▶️ 開始案内テスト');
-            playAudioFile('start');
         }
 
         function showDebugInfo() {
