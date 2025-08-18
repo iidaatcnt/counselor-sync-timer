@@ -267,6 +267,7 @@
         <button class="test-btn sound-test-btn" onclick="testSound()">🔊 音声テスト</button>
         <button class="test-btn debug-btn" onclick="showDebugInfo()">📊 デバッグ情報</button>
         <button class="test-btn force-notify-btn" onclick="forceNotification()">🚨 強制通知</button>
+        <button class="test-btn" style="background: #2ECC71; color: white;" onclick="testConnection()">🌐 接続テスト</button>
     </div>
 
     <script>
@@ -466,10 +467,35 @@
 
         // 接続状態の更新
         function updateConnectionStatus(status) {
-            connectionStatusElement.className = `connection-status ${status}`;
-            connectionStatusElement.textContent = 
-                status === 'connected' ? '接続済み' :
-                status === 'connecting' ? '接続中...' : '接続エラー';
+            console.log(`📡 管理者ページ：接続状態更新 -> ${status}`);
+            
+            const element = connectionStatusElement;
+            if (!element) {
+                console.error('❌ 管理者ページ：接続状態要素が見つかりません');
+                return;
+            }
+            
+            // クラスをクリアしてから新しいクラスを設定
+            element.className = `connection-status ${status}`;
+            
+            // テキストを設定
+            switch(status) {
+                case 'connected':
+                    element.textContent = '接続済み';
+                    console.log('✅ 管理者ページ：接続済み状態に更新');
+                    break;
+                case 'connecting':
+                    element.textContent = '接続中...';
+                    console.log('🔄 管理者ページ：接続中状態に更新');
+                    break;
+                case 'error':
+                    element.textContent = '接続エラー';
+                    console.log('❌ 管理者ページ：エラー状態に更新');
+                    break;
+                default:
+                    element.textContent = '不明';
+                    console.log('❓ 管理者ページ：不明状態');
+            }
         }
 
         // API呼び出し
@@ -481,15 +507,16 @@
                 const data = await response.json();
                 updateTimerDisplay(data);
                 
+                // 接続状態の更新を確実に行う
                 if (!isConnected) {
                     isConnected = true;
                     updateConnectionStatus('connected');
-                    console.log('🌐 サーバーに接続しました');
+                    console.log('🌐 管理者ページ：サーバーに接続しました');
                 }
                 
                 return data;
             } catch (error) {
-                console.error('❌ API取得エラー:', error);
+                console.error('❌ 管理者ページ API取得エラー:', error);
                 if (isConnected) {
                     isConnected = false;
                     updateConnectionStatus('error');
@@ -556,6 +583,36 @@
             playBeep(5, 1000, 300, 500);
         }
 
+        // 接続テスト機能
+        async function testConnection() {
+            console.log('🌐 管理者ページ：手動接続テスト開始');
+            updateConnectionStatus('connecting');
+            
+            try {
+                const response = await fetch('/api/timer');
+                console.log('📡 管理者ページ：API応答ステータス:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 管理者ページ：取得データ:', data);
+                
+                updateTimerDisplay(data);
+                isConnected = true;
+                updateConnectionStatus('connected');
+                
+                alert('✅ 接続テスト成功！\nサーバーとの通信は正常です。');
+                
+            } catch (error) {
+                console.error('❌ 管理者ページ：接続テストエラー:', error);
+                isConnected = false;
+                updateConnectionStatus('error');
+                alert(`❌ 接続テスト失敗\nエラー: ${error.message}`);
+            }
+        }
+
         // イベントリスナー
         soundToggle.addEventListener('click', toggleSound);
 
@@ -567,17 +624,31 @@
             await initializeAudio();
             updateSoundUI();
             
-            // 初期データ取得
+            // 接続状態を明示的に「接続中」に設定
             updateConnectionStatus('connecting');
-            try {
-                await fetchTimerState();
-            } catch (error) {
-                console.error('初期データ取得失敗:', error);
-            }
+            console.log('🔄 管理者ページ：API接続を開始します');
+            
+            // 初期データ取得（少し遅延させて確実に実行）
+            setTimeout(async () => {
+                try {
+                    console.log('🌐 管理者ページ：初期データ取得を試行');
+                    await fetchTimerState();
+                    console.log('✅ 管理者ページ：初期データ取得成功');
+                } catch (error) {
+                    console.error('❌ 管理者ページ：初期データ取得失敗:', error);
+                    updateConnectionStatus('error');
+                }
+            }, 500);
             
             // ポーリング開始
-            pollInterval = setInterval(fetchTimerState, 1000);
-            console.log('🔄 ポーリング開始');
+            pollInterval = setInterval(async () => {
+                try {
+                    await fetchTimerState();
+                } catch (error) {
+                    console.error('❌ 管理者ページ：ポーリングエラー:', error);
+                }
+            }, 1000);
+            console.log('🔄 管理者ページ：ポーリング開始');
         });
 
         // ページ離脱時のクリーンアップ
