@@ -407,6 +407,202 @@
         let previousSessionTime = null;
         let notifiedTimes = new Set();
         
+        // 学校チャイム機能を追加
+        let schoolChimeEnabled = false;
+        let chimeNotifiedTimes = new Set();
+
+        // ウェストミンスターチャイムの音階
+        const chimeNotes = {
+            'E5': 659.25,  // ミ（キーン）
+            'C5': 523.25,  // ド（コーン）  
+            'D5': 587.33,  // レ（カーン）
+            'G4': 392.00   // ソ（コーン）
+        };
+
+        // 管理者用3段階チャイムパターン（少し控えめ）
+        const chimePatterns = {
+            17: { // 3分前
+                name: "3分前チャイム",
+                pattern: [
+                    {note: 'E5', duration: 400},
+                    {pause: 120},
+                    {note: 'C5', duration: 400},
+                    {pause: 120},
+                    {note: 'D5', duration: 500}
+                ],
+                message: "管理者通知: 残り3分"
+            },
+            19: { // 1分前
+                name: "1分前予鈴",
+                pattern: [
+                    {note: 'E5', duration: 300},
+                    {pause: 80},
+                    {note: 'C5', duration: 300},
+                    {pause: 80},
+                    {note: 'D5', duration: 300},
+                    {pause: 80},
+                    {note: 'G4', duration: 400}
+                ],
+                message: "管理者通知: 残り1分"
+            },
+            20: { // 終了
+                name: "終了チャイム",
+                pattern: [
+                    {note: 'E5', duration: 500},
+                    {pause: 150},
+                    {note: 'C5', duration: 500},
+                    {pause: 150},
+                    {note: 'D5', duration: 500},
+                    {pause: 150},
+                    {note: 'G4', duration: 800}
+                ],
+                message: "管理者通知: セッション終了"
+            }
+        };
+
+        // 学校チャイム再生（管理者用）
+        async function playSchoolChime(timing) {
+            const chimeData = chimePatterns[timing];
+            if (!chimeData || !audioContext || !audioUnlocked) return;
+
+            console.log(`🏫 管理者 ${chimeData.name} - ${chimeData.message}`);
+
+            for (let i = 0; i < chimeData.pattern.length; i++) {
+                const step = chimeData.pattern[i];
+                
+                if (step.pause) {
+                    await wait(step.pause);
+                } else {
+                    const frequency = chimeNotes[step.note];
+                    const volume = step.volume || 0.08; // 管理者用は少し静か
+                    await playChimeTone(frequency, step.duration, volume);
+                }
+            }
+        }
+
+        // チャイム音生成（管理者用）
+        async function playChimeTone(frequency, duration, volume = 0.08) {
+            if (!audioContext || !audioUnlocked) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const harmonic1 = audioContext.createOscillator();
+            const harmonic2 = audioContext.createOscillator();
+            const harmonicGain1 = audioContext.createGain();
+            const harmonicGain2 = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            harmonic1.connect(harmonicGain1);
+            harmonic2.connect(harmonicGain2);
+            gainNode.connect(audioContext.destination);
+            harmonicGain1.connect(audioContext.destination);
+            harmonicGain2.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            harmonic1.frequency.setValueAtTime(frequency * 2, audioContext.currentTime);
+            harmonic1.type = 'sine';
+            harmonic2.frequency.setValueAtTime(frequency * 3, audioContext.currentTime);
+            harmonic2.type = 'sine';
+
+            const now = audioContext.currentTime;
+            const attackTime = 0.02;
+            const decayTime = duration / 1000 * 0.3;
+            const sustainLevel = volume * 0.6;
+
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(volume, now + attackTime);
+            gainNode.gain.exponentialRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+            harmonicGain1.gain.setValueAtTime(0, now);
+            harmonicGain1.gain.linearRampToValueAtTime(volume * 0.25, now + attackTime);
+            harmonicGain1.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+            harmonicGain2.gain.setValueAtTime(0, now);
+            harmonicGain2.gain.linearRampToValueAtTime(volume * 0.12, now + attackTime);
+            harmonicGain2.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+            oscillator.start(now);
+            harmonic1.start(now);
+            harmonic2.start(now);
+
+            oscillator.stop(now + duration / 1000);
+            harmonic1.stop(now + duration / 1000);
+            harmonic2.stop(now + duration / 1000);
+
+            return wait(duration);
+        }
+
+        // 待機関数
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 学校チャイム通知チェック（管理者用）
+        function checkSchoolChimeNotifications(sessionTime) {
+            const elapsedSeconds = 1200 - sessionTime;
+            const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+
+            if (!schoolChimeEnabled) return;
+
+            const importantTimings = [17, 19, 20];
+            
+            importantTimings.forEach(timing => {
+                const targetSeconds = timing * 60;
+                const isAtTiming = Math.abs(elapsedSeconds - targetSeconds) <= 2;
+                const notAlreadyNotified = !chimeNotifiedTimes.has(timing);
+
+                if (isAtTiming && !notAlreadyNotified) {
+                    playSchoolChime(timing);
+                    chimeNotifiedTimes.add(timing);
+                }
+            });
+
+            if (sessionTime > 1100 && chimeNotifiedTimes.size > 0) {
+                chimeNotifiedTimes.clear();
+                console.log('🔄 管理者学校チャイム通知履歴をリセット');
+            }
+        }
+
+        // 管理者音声有効化を学校チャイム対応に更新
+        async function enableAudio() {
+            try {
+                console.log('🔊 管理者音声有効化を開始');
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                    console.log('🔄 AudioContextを再開しました');
+                }
+                
+                try {
+                    await audioElement.play();
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                } catch (e) {
+                    console.log('HTML5 Audio unlock failed, but continuing...');
+                }
+                
+                soundEnabled = true;
+                schoolChimeEnabled = true;  // 学校チャイムも有効化
+                audioUnlocked = true;
+                audioEnableBtn.classList.add('hidden');
+                
+                // 管理者用学校チャイムのテスト音を再生
+                await wait(500);
+                playSchoolChime(17); // 3分前チャイムでテスト
+                
+                console.log('✅ 管理者音声と学校チャイムが有効になりました');
+                alert('管理者音声通知が有効になりました！\n🏫 学校チャイム方式でセッション進行をお知らせします\n\n• 残り3分: 3音チャイム\n• 残り1分: 予鈴\n• 終了: 終了チャイム');
+                
+            } catch (error) {
+                console.error('💥 音声有効化に失敗:', error);
+                alert('音声の有効化に失敗しました。手動で通知を確認してください。');
+            }
+        }
+        
         console.log('🚀 SessionTimer 管理者ページが開始されました');
         
         // スマホ音声対応：ユーザー操作で音声を有効化
