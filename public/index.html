@@ -314,7 +314,18 @@
     </div>
 
     <script>
-        console.log('🚀 SessionTimer 相談員ページが開始されました');
+        console.log('🚀 SessionTimer 相談員ページ（複数タブ対応版）が開始されました');
+        
+        // ページの一意識別子を生成（複数タブ識別用）
+        const pageId = 'counselor-' + Math.random().toString(36).substr(2, 9);
+        const startTime = Date.now();
+        console.log(`🆔 ページID: ${pageId}`);
+        console.log(`🕐 起動時刻: ${new Date().toLocaleString()}`);
+        
+        // 複数タブ対応のための変数
+        let isTabActive = true;
+        let lastActivityTime = Date.now();
+        let audioPlaybackLock = false;
         
         // DOM要素の取得
         const totalTimerElement = document.getElementById('totalTimer');
@@ -325,8 +336,104 @@
         const soundStatus = document.getElementById('soundStatus');
         const voiceMessageElement = document.getElementById('voiceMessage');
         
+        // 複数タブ対応：タブアクティブ状態の監視
+        function initTabCoordination() {
+            // タブの表示/非表示を監視
+            document.addEventListener('visibilitychange', () => {
+                isTabActive = !document.hidden;
+                const timestamp = new Date().toLocaleTimeString();
+                
+                if (isTabActive) {
+                    console.log(`👁️ [${timestamp}] [${pageId}] タブがアクティブになりました`);
+                    lastActivityTime = Date.now();
+                } else {
+                    console.log(`😴 [${timestamp}] [${pageId}] タブが非アクティブになりました`);
+                }
+            });
+            
+            // ウィンドウフォーカス監視
+            window.addEventListener('focus', () => {
+                isTabActive = true;
+                lastActivityTime = Date.now();
+                console.log(`🎯 [${pageId}] ウィンドウフォーカス取得`);
+            });
+            
+            window.addEventListener('blur', () => {
+                console.log(`😐 [${pageId}] ウィンドウフォーカス喪失`);
+            });
+        }
+        
+        // 複数タブ対応：音声再生権の管理
+        function requestAudioPlayback(audioType) {
+            const key = 'sessiontimer_audio_lock';
+            const now = Date.now();
+            
+            try {
+                // 既存のロック状況確認
+                const existingLock = localStorage.getItem(key);
+                if (existingLock) {
+                    const lockData = JSON.parse(existingLock);
+                    
+                    // 5秒以内の他のタブのロックがある場合は再生しない
+                    if (lockData.timestamp > now - 5000 && lockData.pageId !== pageId) {
+                        console.log(`🔒 [${pageId}] 他のタブ（${lockData.pageId}）が音声再生中のため、再生をスキップ`);
+                        return false;
+                    }
+                }
+                
+                // 音声再生権を取得
+                const lockData = {
+                    pageId: pageId,
+                    timestamp: now,
+                    audioType: audioType,
+                    isActive: isTabActive
+                };
+                
+                localStorage.setItem(key, JSON.stringify(lockData));
+                console.log(`🔓 [${pageId}] 音声再生権を取得: ${audioType}`);
+                
+                // 3秒後にロックを解除
+                setTimeout(() => {
+                    try {
+                        const currentLock = localStorage.getItem(key);
+                        if (currentLock) {
+                            const currentData = JSON.parse(currentLock);
+                            if (currentData.pageId === pageId && currentData.timestamp === now) {
+                                localStorage.removeItem(key);
+                                console.log(`🔓 [${pageId}] 音声再生ロックを解除`);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn(`⚠️ [${pageId}] ロック解除エラー:`, e);
+                    }
+                }, 3000);
+                
+                return true;
+                
+            } catch (error) {
+                console.warn(`⚠️ [${pageId}] localStorage使用不可、音声再生を継続:`, error);
+                return true; // localStorage が使えない場合は再生を許可
+            }
+        }
+        
+        // 複数タブ対応：重複セッション開始検出の防止
+        function checkTabSpecificSessionStart(currentStatus, previousStatus) {
+            // アクティブなタブでのみセッション開始を検出
+            if (!isTabActive && voiceEnabled) {
+                console.log(`😴 [${pageId}] 非アクティブタブのため、セッション開始検出をスキップ`);
+                return false;
+            }
+            
+            // 最近のアクティビティがあるタブのみで処理
+            const timeSinceActivity = Date.now() - lastActivityTime;
+            if (timeSinceActivity > 10000) { // 10秒以上非アクティブ
+                console.log(`⏰ [${pageId}] 長時間非アクティブ（${Math.floor(timeSinceActivity/1000)}秒）のため、セッション開始検出をスキップ`);
+                return false;
+            }
+            
+            return true;
+        }
         let isConnected = false;
-        let pollInterval = null;
         let voiceEnabled = false;
         let previousSessionTime = null;
         let previousStatus = null;
@@ -391,17 +498,23 @@
             console.log(`🎵 ${Object.keys(audioFiles).length}個の音声ファイル読み込みを開始しました`);
         }
 
-        // WAVファイルによる音声再生
+        // WAVファイルによる音声再生（複数タブ対応版）
         function playAudioFile(key, callback = null) {
             if (!voiceEnabled) {
-                console.log('🔇 音声無効のため再生をスキップ');
+                console.log(`🔇 [${pageId}] 音声無効のため再生をスキップ`);
+                return;
+            }
+
+            // 複数タブでの音声再生権チェック
+            if (!requestAudioPlayback(key)) {
+                console.log(`🔒 [${pageId}] 音声再生権を取得できないため、再生をスキップ: ${key}`);
                 return;
             }
 
             const audio = audioCache[key];
             if (!audio) {
-                console.error(`❌ 音声ファイル未登録: ${key}`);
-                console.log('🔄 Web Speech APIで代替再生');
+                console.error(`❌ [${pageId}] 音声ファイル未登録: ${key}`);
+                console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
                 speakJapanese(voiceMessages[key], callback);
                 return;
             }
@@ -416,29 +529,29 @@
                 // 音量確認
                 if (audio.volume < 0.5) {
                     audio.volume = 0.8;
-                    console.log('🔊 音量を0.8に調整');
+                    console.log(`🔊 [${pageId}] 音量を0.8に調整`);
                 }
                 
                 const playPromise = audio.play();
                 
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
-                        console.log(`🎵 音声ファイル再生開始: ${key} (${audioFiles[key]})`);
+                        console.log(`🎵 [${pageId}] 音声ファイル再生開始: ${key} (${audioFiles[key]})`);
                     }).catch((error) => {
-                        console.error(`❌ 音声ファイル再生エラー: ${key}`, error);
-                        console.log('🔄 Web Speech APIで代替再生');
+                        console.error(`❌ [${pageId}] 音声ファイル再生エラー: ${key}`, error);
+                        console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
                         speakJapanese(voiceMessages[key], callback);
                     });
                 }
 
                 audio.onended = () => {
-                    console.log(`✅ 音声ファイル再生完了: ${key}`);
+                    console.log(`✅ [${pageId}] 音声ファイル再生完了: ${key}`);
                     if (callback) callback();
                 };
 
             } catch (error) {
-                console.error(`❌ 音声ファイル再生失敗: ${key}`, error);
-                console.log('🔄 Web Speech APIで代替再生');
+                console.error(`❌ [${pageId}] 音声ファイル再生失敗: ${key}`, error);
+                console.log(`🔄 [${pageId}] Web Speech APIで代替再生`);
                 speakJapanese(voiceMessages[key], callback);
             }
         }
@@ -462,10 +575,10 @@
             }
         }
 
-        // 日本語音声の再生
+        // 日本語音声の再生（複数タブ対応版）
         function speakJapanese(text, callback = null) {
             if (!voiceEnabled || !voiceReady) {
-                console.log('🔇 音声無効または未対応');
+                console.log(`🔇 [${pageId}] 音声無効または未対応`);
                 return;
             }
 
@@ -488,21 +601,21 @@
                 }
 
                 utterance.onstart = () => {
-                    console.log('🎙️ 音声再生開始:', text);
+                    console.log(`🎙️ [${pageId}] Web Speech API 音声再生開始:`, text);
                 };
 
                 utterance.onend = () => {
-                    console.log('✅ 音声再生完了');
+                    console.log(`✅ [${pageId}] Web Speech API 音声再生完了`);
                     if (callback) callback();
                 };
 
                 utterance.onerror = (event) => {
-                    console.error('❌ 音声再生エラー:', event.error);
+                    console.error(`❌ [${pageId}] Web Speech API 音声再生エラー:`, event.error);
                 };
 
                 speechSynthesis.speak(utterance);
             } catch (error) {
-                console.error('❌ 音声再生失敗:', error);
+                console.error(`❌ [${pageId}] Web Speech API 音声再生失敗:`, error);
             }
         }
 
@@ -523,9 +636,9 @@
             updateVoiceUI();
             
             if (voiceEnabled) {
-                console.log('🎙️ 音声案内をONにしました');
+                console.log(`🎙️ [${pageId}] 音声案内をONにしました`);
             } else {
-                console.log('🔇 音声案内をOFFにしました');
+                console.log(`🔇 [${pageId}] 音声案内をOFFにしました`);
             }
         }
 
@@ -542,7 +655,7 @@
             }
         }
 
-        // セッション時間に基づく音声案内
+        // セッション時間に基づく音声案内（複数タブ対応版）
         function checkSessionNotifications(currentSessionTime, isPaused) {
             if (!voiceEnabled) return;
 
@@ -560,7 +673,21 @@
 
             notifications.forEach(notification => {
                 if (elapsedTime >= notification.time && !notifiedTimes.has(notification.time) && !isPaused) {
-                    console.log(`🔔 音声案内: ${notification.key}`);
+                    // アクティブなタブでのみ音声案内を実行
+                    if (!isTabActive) {
+                        console.log(`😴 [${pageId}] 非アクティブタブのため音声案内をスキップ: ${notification.key}`);
+                        notifiedTimes.add(notification.time); // 通知済みとしてマーク
+                        return;
+                    }
+                    
+                    const timeSinceActivity = Date.now() - lastActivityTime;
+                    if (timeSinceActivity > 5000) { // 5秒以上非アクティブ
+                        console.log(`⏰ [${pageId}] 非アクティブ状態のため音声案内をスキップ: ${notification.key}`);
+                        notifiedTimes.add(notification.time);
+                        return;
+                    }
+                    
+                    console.log(`🔔 [${pageId}] 音声案内実行: ${notification.key} (アクティブタブ)`);
                     playAudioFile(notification.key);
                     notifiedTimes.add(notification.time);
                     
@@ -573,22 +700,44 @@
             });
         }
 
-        // セッション開始の検出
+        // セッション開始の検出（複数タブ対応版）
         function checkSessionStart(currentStatus, previousStatus) {
+            const timestamp = new Date().toLocaleTimeString();
+            
+            console.log(`🔍 [${timestamp}] [${pageId}] セッション開始チェック:`);
+            console.log(`   音声有効: ${voiceEnabled}`);
+            console.log(`   前回ステータス: "${previousStatus}"`);
+            console.log(`   現在ステータス: "${currentStatus}"`);
+            console.log(`   タブアクティブ: ${isTabActive}`);
+            console.log(`   最終アクティビティ: ${Math.floor((Date.now() - lastActivityTime) / 1000)}秒前`);
+            
+            // 複数タブでの重複セッション開始検出を防止
+            if (!checkTabSpecificSessionStart(currentStatus, previousStatus)) {
+                return;
+            }
+            
             if (voiceEnabled && previousStatus === '一時停止中' && currentStatus === '実行中') {
-                console.log('🔔 タイマー開始を検出しました');
-                console.log('🎵 開始案内ファイルを再生: counselor_start.wav');
+                console.log(`🔔 ✅ [${pageId}] タイマー開始を検出しました！（アクティブタブ）`);
+                console.log(`🎵 [${pageId}] 開始案内ファイルを再生: counselor_start.wav`);
                 
                 // タイマー開始時は必ずcounselor_start.wavを再生
                 if (audioCache['start']) {
                     playAudioFile('start');
                 } else {
-                    console.log('⚠️ 開始案内ファイル未読み込み - Web Speech APIで代替');
-                    speakJapanese(voiceMessages.start);
+                    console.log(`⚠️ [${pageId}] 開始案内ファイル未読み込み - Web Speech APIで代替`);
+                    if (requestAudioPlayback('start-speech')) {
+                        speakJapanese(voiceMessages.start);
+                    }
                 }
                 
                 notifiedTimes.clear(); // 通知履歴をクリア
-                console.log('🔄 通知履歴をクリアしました');
+                console.log(`🔄 [${pageId}] 通知履歴をクリアしました`);
+            } else {
+                if (!voiceEnabled) {
+                    console.log(`🔇 [${pageId}] 音声無効のため開始案内をスキップ`);
+                } else if (previousStatus !== '一時停止中' || currentStatus !== '実行中') {
+                    console.log(`❌ [${pageId}] 開始条件不一致のため開始案内をスキップ`);
+                }
             }
         }
 
@@ -609,24 +758,42 @@
         function updateTimerDisplay(data) {
             const currentStatus = data.isPaused ? '一時停止中' : '実行中';
             
-            // セッション開始の検出
-            checkSessionStart(currentStatus, previousStatus);
+            // ステータス変更の詳細ログ
+            if (previousStatus !== currentStatus) {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log(`🔄 [${timestamp}] [${pageId}] ステータス変更検出:`);
+                console.log(`   前回: "${previousStatus}" → 今回: "${currentStatus}"`);
+                console.log(`   データ: isPaused=${data.isPaused}, sessionTime=${data.sessionTime}, totalTime=${data.totalTime}`);
+                
+                // セッション開始の検出
+                checkSessionStart(currentStatus, previousStatus);
+                
+                previousStatus = currentStatus;
+            }
             
-            // セッション時間通知の確認
+            // セッション時間変更の詳細ログ
             if (data.sessionTime !== previousSessionTime) {
+                const elapsedTime = 1200 - data.sessionTime;
+                const elapsedMinutes = Math.floor(elapsedTime / 60);
+                const elapsedSeconds = elapsedTime % 60;
+                
+                console.log(`⏱️ セッション時間変更: ${previousSessionTime}秒 → ${data.sessionTime}秒 (経過: ${elapsedMinutes}分${elapsedSeconds}秒)`);
+                
                 checkSessionNotifications(data.sessionTime, data.isPaused);
                 previousSessionTime = data.sessionTime;
             }
             
+            // UI更新
             sessionTimerElement.textContent = formatTime(data.sessionTime);
             totalTimerElement.textContent = formatTime(data.totalTime);
             statusElement.textContent = `ステータス: ${currentStatus}`;
-            
-            previousStatus = currentStatus;
         }
 
         // 接続状態の更新
         function updateConnectionStatus(status) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`📡 [${timestamp}] [${pageId}] 相談員ページ：接続状態更新 -> ${status}`);
+            
             connectionStatusElement.className = `connection-status ${status}`;
             connectionStatusElement.textContent = 
                 status === 'connected' ? '接続済み' :
@@ -636,21 +803,30 @@
         // API呼び出し
         async function fetchTimerState() {
             try {
+                const startTime = Date.now();
                 const response = await fetch('/api/timer');
+                const fetchTime = Date.now() - startTime;
+                
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
+                
+                // API取得の詳細ログ（3秒に1回のみ出力して負荷軽減）
+                if (Math.floor(Date.now() / 3000) !== Math.floor((Date.now() - 1000) / 3000)) {
+                    console.log(`📡 [${pageId}] API取得 (${fetchTime}ms): isPaused=${data.isPaused}, sessionTime=${data.sessionTime}, totalTime=${data.totalTime}`);
+                }
+                
                 updateTimerDisplay(data);
                 
                 if (!isConnected) {
                     isConnected = true;
                     updateConnectionStatus('connected');
-                    console.log('🌐 サーバーに接続しました');
+                    console.log(`🌐 [${pageId}] 相談員ページ：サーバーに接続しました`);
                 }
                 
                 return data;
             } catch (error) {
-                console.error('❌ API取得エラー:', error);
+                console.error(`❌ [${pageId}] 相談員ページ API取得エラー:`, error);
                 if (isConnected) {
                     isConnected = false;
                     updateConnectionStatus('error');
@@ -665,7 +841,7 @@
                 alert('音声案内をONにしてください');
                 return;
             }
-            console.log('🎙️ 音声テスト実行');
+            console.log(`🎙️ [${pageId}] 音声テスト実行`);
             if (audioCache['soundCheck']) {
                 playAudioFile('soundCheck');
             } else {
@@ -679,9 +855,35 @@
                 return audio && audio.readyState >= 3; // HAVE_FUTURE_DATA以上
             });
             
+            const timestamp = new Date().toLocaleString();
+            const uptime = Math.floor((Date.now() - startTime) / 1000);
+            const timeSinceActivity = Math.floor((Date.now() - lastActivityTime) / 1000);
+            
+            // 他のタブ情報を取得
+            let otherTabsInfo = '不明';
+            try {
+                const lockData = localStorage.getItem('sessiontimer_audio_lock');
+                if (lockData) {
+                    const lock = JSON.parse(lockData);
+                    otherTabsInfo = `${lock.pageId} (${lock.audioType})`;
+                } else {
+                    otherTabsInfo = 'なし';
+                }
+            } catch (e) {
+                otherTabsInfo = 'localStorage未対応';
+            }
+            
             const info = `
+🆔 ページID: ${pageId}
+🕐 現在時刻: ${timestamp}
+⏰ 稼働時間: ${uptime}秒
+👁️ タブアクティブ: ${isTabActive ? 'はい' : 'いいえ'}
+🕰️ 最終アクティビティ: ${timeSinceActivity}秒前
+🔒 音声ロック状況: ${otherTabsInfo}
 🎙️ 音声状態: ${voiceEnabled ? 'ON' : 'OFF'}
 🔊 Speech API: ${voiceReady ? '対応' : '未対応'}
+📊 前回ステータス: "${previousStatus || 'なし'}"
+⏱️ 前回セッション時間: ${previousSessionTime || 'なし'}秒
 🔔 通知履歴: ${Array.from(notifiedTimes).join(', ') || 'なし'}
 🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}
 📱 ユーザーエージェント: ${navigator.userAgent.includes('Mobile') ? 'モバイル' : 'デスクトップ'}
@@ -691,7 +893,16 @@
             alert(info);
             
             // コンソールにも詳細情報を出力
-            console.log('📊 詳細デバッグ情報:');
+            console.log(`📊 [${pageId}] 詳細デバッグ情報:`);
+            console.log(`🕐 タイムスタンプ: ${timestamp}`);
+            console.log(`⏰ 稼働時間: ${uptime}秒`);
+            console.log(`👁️ タブアクティブ: ${isTabActive}`);
+            console.log(`🕰️ 最終アクティビティ: ${timeSinceActivity}秒前`);
+            console.log(`🔒 音声ロック状況: ${otherTabsInfo}`);
+            console.log(`📊 前回ステータス: ${previousStatus}`);
+            console.log(`⏱️ 前回セッション時間: ${previousSessionTime}`);
+            console.log(`🔔 通知履歴: ${Array.from(notifiedTimes)}`);
+            console.log(`🎵 音声ファイル詳細:`);
             Object.keys(audioCache).forEach(key => {
                 const audio = audioCache[key];
                 console.log(`  ${key}: readyState=${audio.readyState}, src=${audio.src}`);
@@ -706,10 +917,23 @@
             initializeVoice();
         };
 
-        // ページ読み込み後の初期化
+        // ページ読み込み後の初期化（複数タブ対応版）
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('📱 相談員ページ読み込み完了');
-            console.log('🎯 SessionTimer音声機能付き相談員ページを初期化します');
+            const timestamp = new Date().toLocaleString();
+            console.log(`📱 [${timestamp}] [${pageId}] 相談員ページ（複数タブ対応版）読み込み完了`);
+            console.log(`🎯 [${pageId}] SessionTimer音声機能付き相談員ページを初期化します`);
+            
+            // 複数タブ協調機能の初期化
+            initTabCoordination();
+            console.log(`🤝 [${pageId}] 複数タブ協調機能を初期化`);
+            
+            // 初期状態の記録
+            console.log(`📊 [${pageId}] 初期状態:`);
+            console.log(`   previousStatus: "${previousStatus}"`);
+            console.log(`   previousSessionTime: ${previousSessionTime}`);
+            console.log(`   voiceEnabled: ${voiceEnabled}`);
+            console.log(`   isConnected: ${isConnected}`);
+            console.log(`   isTabActive: ${isTabActive}`);
             
             // 音声ファイルの事前読み込み
             preloadAudioFiles();
@@ -717,22 +941,48 @@
             // 音声システムの準備
             initializeVoice();
             updateVoiceUI();
-            console.log('🎙️ 音声システム初期化完了');
+            console.log(`🎙️ [${pageId}] 音声システム初期化完了`);
             
             // 初期データ取得
             updateConnectionStatus('connecting');
             try {
+                console.log(`🌐 [${pageId}] 初期データ取得を開始`);
                 await fetchTimerState();
-                console.log('✅ 初期データ取得成功');
+                console.log(`✅ [${pageId}] 初期データ取得成功`);
             } catch (error) {
-                console.error('❌ 初期データ取得失敗:', error);
+                console.error(`❌ [${pageId}] 初期データ取得失敗:`, error);
             }
             
             // ポーリング開始
-            pollInterval = setInterval(fetchTimerState, 1000);
-            console.log('🔄 1秒間隔でのポーリング開始');
+            pollInterval = setInterval(async () => {
+                try {
+                    await fetchTimerState();
+                    // アクティビティ時刻を更新
+                    if (isTabActive) {
+                        lastActivityTime = Date.now();
+                    }
+                } catch (error) {
+                    console.error(`❌ [${pageId}] ポーリングエラー:`, error);
+                }
+            }, 1000);
+            console.log(`🔄 [${pageId}] 1秒間隔でのポーリング開始`);
             
-            console.log('🚀 相談員ページの初期化が完了しました');
+            console.log(`🚀 [${new Date().toLocaleTimeString()}] [${pageId}] 相談員ページ（複数タブ対応版）の初期化が完了しました`);
+            
+            // 5秒後に複数タブ状況をレポート
+            setTimeout(() => {
+                try {
+                    const lockData = localStorage.getItem('sessiontimer_audio_lock');
+                    if (lockData) {
+                        const lock = JSON.parse(lockData);
+                        if (lock.pageId !== pageId) {
+                            console.log(`🔍 [${pageId}] 他のタブが検出されました: ${lock.pageId}`);
+                        }
+                    }
+                } catch (e) {
+                    console.log(`📝 [${pageId}] localStorage利用不可、単独動作モード`);
+                }
+            }, 5000);
         });
 
         // ページ離脱時のクリーンアップ
