@@ -36,15 +36,30 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 16px;
+            border-radius: 25px;
             font-weight: bold;
             font-size: 0.9rem;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
         }
 
-        .connected { background: #4CAF50; }
-        .connecting { background: #FF9800; }
-        .error { background: #f44336; }
+        .connected { 
+            background: rgba(76, 175, 80, 0.9);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+        .connecting { 
+            background: rgba(255, 152, 0, 0.9);
+            border-color: rgba(255, 152, 0, 0.5);
+        }
+        .error { 
+            background: rgba(244, 67, 54, 0.9);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
 
         .timer-display {
             padding: 40px 20px;
@@ -219,7 +234,7 @@
     <div class="connection-status" id="connectionStatus">接続中...</div>
     
     <div class="header">
-        <h1>📊 SessionTimer - 管理者</h1>
+        <h1>⚙️ SessionTimer - 管理者</h1>
     </div>
 
     <div class="timer-display">
@@ -270,6 +285,7 @@
         let audioInitialized = false;
         let soundEnabled = false;
         let previousSessionTime = null;
+        let notifiedTimes = new Set();
         let notifiedTimes = new Set();
 
         // 音声関連の変数
