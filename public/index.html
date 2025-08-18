@@ -663,6 +663,7 @@
 🔔 通知履歴: ${Array.from(notifiedTimes).join(', ')}
 🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}
 📱 ユーザーエージェント: ${navigator.userAgent.includes('Mobile') ? 'モバイル' : 'デスクトップ'}
+🎵 音声ファイル: ${Object.keys(audioCache).length}/7 読み込み済み
             `;
             alert(info);
         }
