@@ -1,193 +1,228 @@
-# Counselor Sync Timer 📱⏱️
+# SessionTimer 🕐
 
-相談会での複数カウンセラーによる同期セッション管理タイマー
+リアルタイム同期タイマーアプリケーション - 相談セッションや会議の時間管理に最適
 
-[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-black)](https://sessiontimer.vercel.app/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/session-timer)
 
-## 🎯 概要
+## 📌 概要
 
-**Counselor Sync Timer** は、複数のカウンセラーが同時に相談セッションを行う際の時間管理を支援するリアルタイム同期タイマーアプリケーションです。管理者による一元制御により、全てのカウンセラーが同じタイマーを共有し、公平で効率的な相談会運営を実現します。
+SessionTimerは、複数人で同じタイマーを共有できるWebアプリケーションです。管理者がタイマーを操作し、相談員や参加者は閲覧のみを行います。WebSocketを使わず、アクセスカウンターと同じHTTPポーリング方式で確実な同期を実現しています。
 
-## 🔧 解決する課題
+### ✨ 特徴
 
-### 従来の問題
-- ❌ カウンセラー個別のタイマー管理によるスタート忘れ
-- ❌ 物理時計の座席による視認性の差
-- ❌ 時間のバラつきによる相談者への不公平感
-- ❌ セッション入れ替えタイミングの不統一
+- 🔄 **リアルタイム同期** - 全員が同じ時間を表示
+- 🎯 **役割分離** - 管理者と閲覧者で別々のページ
+- 🚀 **簡単デプロイ** - Vercelで即座に公開可能
+- 📱 **レスポンシブ対応** - PC、タブレット、スマホで快適に利用
+- 🔔 **通知機能** - セッション終了時に音声でお知らせ
+- 🌐 **Socket.io不要** - シンプルなHTTP通信のみ
 
-### 本アプリの解決策
-- ✅ 管理者による一元的なタイマー制御
-- ✅ 全カウンセラーのスマートフォン/PCで同期表示
-- ✅ ヒューマンエラーの完全排除
-- ✅ 座席レイアウトに依存しない個別表示
+## 🎬 デモ
 
-## 🚀 機能
+- **管理者画面**: https://your-app.vercel.app/admin.html
+- **相談員画面**: https://your-app.vercel.app/viewer.html
 
-### タイマー機能
-- **全体タイマー**: 相談会全体の残り時間（初期値: 2時間）
-- **セッションタイマー**: 1セッションの残り時間（初期値: 20分）
-- **リアルタイム同期**: 1秒程度の精度で全デバイス同期
+## 🛠️ セットアップ
 
-### 操作機能（管理者のみ）
-- **Start**: タイマー開始・再開
-- **Pause**: タイマー一時停止
-- **Reset**: 全タイマーを初期値にリセット
-- **Next**: セッションタイマーのみリセット（次の相談者へ）
+### 前提条件
 
-### ユーザーインターフェース
-- **レスポンシブデザイン**: スマートフォン〜デスクトップ対応
-- **視覚的フィードバック**: タイマー終了時の点滅表示
-- **接続状態表示**: リアルタイム通信状況の確認
+- Node.js 18.0.0以上
+- Vercelアカウント（無料でOK）
 
-## 💼 想定利用シーン
+### インストール手順
 
-### 基本的な使用例
-```
-👨‍💼 管理者 (1名)
-├── 管理者ページで全体制御
-└── sessiontimer.vercel.app/admin
-
-👩‍⚕️ カウンセラー (5-10名)
-├── 各自のスマートフォン/PCでタイマー確認
-├── sessiontimer.vercel.app/
-└── 1対1または1対2での相談対応
-
-🕐 セッション管理
-├── 20分/セッション
-├── 一斉入れ替えで不公平感を排除
-└── 管理者の統一制御でヒューマンエラー防止
-```
-
-### 運用フロー
-1. **開始前**: 管理者がタイマーをリセット
-2. **セッション開始**: 管理者がStartボタンで一斉開始
-3. **途中確認**: カウンセラーが各自の端末で残り時間確認
-4. **セッション終了**: 管理者がNextボタンで次セッションへ
-5. **全体終了**: 全体タイマー終了で相談会終了
-
-## 🏗️ 技術仕様
-
-### アーキテクチャ
-- **フロントエンド**: HTML5, CSS3, Vanilla JavaScript
-- **バックエンド**: Node.js, Express.js
-- **通信方式**: REST API + ポーリング（1秒間隔）
-- **ホスティング**: Vercel (サーバーレス)
-
-### API エンドポイント
-```
-GET  /api/timer        # タイマー状態取得
-POST /api/timer/start  # タイマー開始
-POST /api/timer/pause  # タイマー一時停止
-POST /api/timer/reset  # 全リセット
-POST /api/timer/next   # セッションリセット
-```
-
-### 対応デバイス
-- 📱 スマートフォン (iOS/Android)
-- 💻 パソコン (Windows/Mac/Linux)
-- 🖥️ タブレット (iPad/Android)
-- 🌐 モダンブラウザ (Chrome, Firefox, Safari, Edge)
-
-## 🚀 使用方法
-
-### 1. アクセス方法
-
-**カウンセラー用（閲覧専用）**
-```
-https://sessiontimer.vercel.app/
-```
-
-**管理者用（操作可能）**
-```
-https://sessiontimer.vercel.app/admin
-```
-
-### 2. 基本操作
-
-#### 管理者の操作手順
-1. 管理者ページにアクセス
-2. 「Reset」で初期状態に設定
-3. カウンセラー全員の準備完了を確認
-4. 「Start」でセッション開始
-5. 20分後に「Next」で次セッションへ
-6. 全セッション終了まで繰り返し
-
-#### カウンセラーの利用方法
-1. 閲覧者ページにアクセス
-2. 接続状態が「接続済み」になることを確認
-3. セッション中は画面で残り時間を確認
-4. 操作は一切不要（管理者が制御）
-
-## 📊 性能・制限事項
-
-### 同期性能
-- **同期精度**: 1秒程度のばらつき
-- **対応人数**: 理論上1000人以上（実用上10-20人想定）
-- **通信量**: 200バイト/秒/ユーザー（軽量）
-
-### 制限事項
-- インターネット接続が必要
-- JavaScript有効ブラウザが必要
-- Vercelの無料プラン制限内での運用
-
-## 🛠️ 開発・カスタマイズ
-
-### ローカル開発
+1. **リポジトリをクローン**
 ```bash
-# リポジトリをクローン
-git clone https://github.com/iidaatcnt/counselor-sync-timer.git
-cd counselor-sync-timer
-
-# 依存関係をインストール
-npm install
-
-# 開発サーバー起動
-npm start
-
-# アクセス
-# 閲覧者: http://localhost:3000/
-# 管理者: http://localhost:3000/admin
+git clone https://github.com/yourusername/session-timer.git
+cd session-timer
 ```
 
-### カスタマイズ例
-- タイマー初期値の変更 (`server.js` の `timerState`)
-- ポーリング間隔の調整 (`index.html`, `admin.html`)
-- デザインのカスタマイズ (CSS部分)
-
-## 📁 プロジェクト構造
-
+2. **必要なファイルを配置**
 ```
-counselor-sync-timer/
-├── server.js              # Express API サーバー
-├── public/
-│   ├── index.html         # カウンセラー用閲覧ページ
-│   └── admin.html         # 管理者用操作ページ
-├── package.json           # Node.js依存関係
-├── vercel.json           # Vercel設定
-├── SPEC.md               # 技術仕様書
-└── README.md             # このファイル
+session-timer/
+├── api/
+│   └── timer.js      # APIエンドポイント
+├── admin.html        # 管理者用ページ
+├── viewer.html       # 相談員用ページ
+└── package.json      # プロジェクト設定
 ```
 
-## 🤝 貢献
+3. **ローカルで動作確認**
+```bash
+npx vercel dev
+# http://localhost:3000 でアクセス可能
+```
 
-バグ報告、機能提案、プルリクエストを歓迎します！
+## 🚀 デプロイ方法
 
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+### 方法1: Vercel CLIを使用
+
+```bash
+# Vercel CLIをインストール
+npm i -g vercel
+
+# デプロイ実行
+vercel
+
+# 表示される質問に答える
+# ? Set up and deploy "session-timer"? [Y/n] Y
+# ? Which scope do you want to deploy to? Your Account
+# ? Link to existing project? [y/N] N
+# ? What's your project's name? session-timer
+# ? In which directory is your code located? ./
+```
+
+### 方法2: GitHub連携（推奨）
+
+1. GitHubにリポジトリを作成
+2. コードをプッシュ
+```bash
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/yourusername/session-timer.git
+git push -u origin main
+```
+3. [Vercel Dashboard](https://vercel.com/dashboard)で「Import Project」
+4. GitHubリポジトリを選択
+5. 自動デプロイ設定完了！
+
+## 📖 使い方
+
+### 管理者（admin.html）
+
+1. **アクセス**: `https://your-app.vercel.app/admin.html`
+2. **時間設定**: 
+   - 全体時間: セッション全体の制限時間
+   - セッション時間: 1回あたりの相談時間
+3. **操作**:
+   - 🟢 **開始**: タイマーをスタート
+   - ⏸️ **一時停止**: タイマーを一時停止
+   - 🔄 **リセット**: 初期状態に戻す
+   - ⏭️ **次のセッション**: セッションタイマーのみリセット
+
+### 相談員（viewer.html）
+
+1. **アクセス**: `https://your-app.vercel.app/viewer.html`
+2. **機能**:
+   - タイマーの表示（操作不可）
+   - プログレスバーで残り時間を視覚化
+   - セッション終了時に音声通知
+   - 開始時刻と終了予定時刻の表示
+
+## ⚙️ カスタマイズ
+
+### デフォルト時間の変更
+
+`api/timer.js`を編集:
+```javascript
+let timerState = {
+  totalDuration: 7200000,   // 2時間 → 変更可能
+  sessionDuration: 1200000,  // 20分 → 変更可能
+  // ...
+};
+```
+
+### デザインの変更
+
+各HTMLファイルの`<style>`セクションでカスタマイズ:
+```css
+/* 例: 背景色の変更 */
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+```
+
+### APIエンドポイントの変更
+
+本番環境用にURLを変更:
+```javascript
+const API_URL = 'https://your-custom-domain.com/api/timer';
+```
+
+## 🔧 トラブルシューティング
+
+### タイマーが同期しない
+
+- ブラウザのコンソールでエラーを確認
+- APIエンドポイントのURLが正しいか確認
+- CORSエラーの場合は`api/timer.js`の設定を確認
+
+### 音が鳴らない
+
+- ブラウザの音声許可を確認
+- ページと一度でもインタラクション（クリック等）したか確認
+
+### オフラインと表示される
+
+- Vercelのデプロイが完了しているか確認
+- ネットワーク接続を確認
+
+## 📊 技術詳細
+
+### なぜSocket.ioを使わないのか？
+
+このプロジェクトでは意図的にWebSocketを使用せず、HTTPポーリング方式を採用しています：
+
+**メリット:**
+- ✅ Vercelなどのサーバーレス環境で確実に動作
+- ✅ ファイアウォールの制限を受けにくい
+- ✅ 実装がシンプルで保守しやすい
+- ✅ アクセスカウンターと同じ確実な仕組み
+
+**仕組み:**
+```javascript
+// 1秒ごとにサーバーに問い合わせ
+setInterval(() => {
+    fetch('/api/timer')
+        .then(res => res.json())
+        .then(data => updateDisplay(data));
+}, 1000);
+```
+
+## 🔒 セキュリティ
+
+現在の実装はパブリックアクセス可能です。本番環境では以下を検討してください：
+
+- 管理者ページへの認証追加
+- APIエンドポイントの保護
+- Rate Limitingの実装
+
+## 📈 今後の機能追加予定
+
+- [ ] 複数タイマーの管理
+- [ ] セッション履歴の記録
+- [ ] 参加者数のカウント
+- [ ] Slack/Discord通知連携
+- [ ] ダークモード対応
+
+## 🤝 コントリビューション
+
+プルリクエストを歓迎します！大きな変更の場合は、まずissueを開いて変更内容を議論してください。
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📝 ライセンス
 
-このプロジェクトは [MIT License](https://opensource.org/licenses/MIT) の下で公開されています。
+MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
-## 📧 お問い合わせ
+## 👥 作者
 
-プロジェクトに関する質問や提案は、[GitHub Issues](https://github.com/iidaatcnt/counselor-sync-timer/issues) をご利用ください。
+- GitHub: [@yourusername](https://github.com/yourusername)
+
+## 🙏 謝辞
+
+- アイコン: Emoji
+- ホスティング: [Vercel](https://vercel.com)
+- インスピレーション: アクセスカウンターの仕組み
+
+## 📞 サポート
+
+問題が発生した場合は、[Issues](https://github.com/yourusername/session-timer/issues)でお知らせください。
 
 ---
 
-**Created with ❤️ for efficient counseling session management**
+⭐ このプロジェクトが役に立ったら、スターをお願いします！

@@ -29,3 +29,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.vercel
+.vercel/timer-state.json
+*.bak
+timer-state.json

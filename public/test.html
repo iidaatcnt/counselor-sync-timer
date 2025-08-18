@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer API Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        pre {
+            background: #2d2d2d;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007acc;
+            background: #111;
+        }
+        .error {
+            border-left-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .success {
+            border-left-color: #51cf66;
+            color: #51cf66;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timer API デバッグツール</h1>
+    
+    <div>
+        <h2>API テスト</h2>
+        <button onclick="testGet()">GET /api/timer</button>
+        <button onclick="testStart()">POST start</button>
+        <button onclick="testPause()">POST pause</button>
+        <button onclick="testReset()">POST reset</button>
+        <button onclick="testNextSession()">POST nextSession</button>
+        <button onclick="clearLog()">ログクリア</button>
+    </div>
+
+    <div>
+        <h2>現在の状態</h2>
+        <pre id="currentState">状態を取得してください...</pre>
+    </div>
+
+    <div>
+        <h2>ログ</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api/timer';
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.insertBefore(entry, log.firstChild);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('ログをクリアしました', 'info');
+        }
+
+        async function testGet() {
+            try {
+                addLog('GET /api/timer を実行中...', 'info');
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                document.getElementById('currentState').textContent = 
+                    JSON.stringify(data, null, 2);
+                
+                addLog(`GET成功: isPaused=${data.isPaused}, remainingTotal=${data.remainingTotal}, remainingSession=${data.remainingSession}`, 'success');
+            } catch (error) {
+                addLog(`GETエラー: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function sendAction(action, additionalData = {}) {
+            try {
+                addLog(`POST /api/timer action="${action}" を実行中...`, 'info');
+                
+                const body = JSON.stringify({
+                    action,
+                    ...additionalData
+                });
+                
+                addLog(`送信データ: ${body}`, 'info');
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: body
+                });
+                
+                const responseText = await response.text();
+                addLog(`レスポンス (${response.status}): ${responseText}`, 'info');
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    addLog(`JSONパースエラー: ${e.message}`, 'error');
+                    return;
+                }
+                
+                if (response.ok) {
+                    addLog(`POST成功: action="${action}"`, 'success');
+                    // 状態を自動更新
+                    await testGet();
+                } else {
+                    addLog(`POSTエラー: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                addLog(`送信エラー: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function testStart() {
+            await sendAction('start');
+        }
+
+        async function testPause() {
+            await sendAction('pause');
+        }
+
+        async function testReset() {
+            await sendAction('reset', {
+                totalMinutes: 120,
+                sessionMinutes: 20
+            });
+        }
+
+        async function testNextSession() {
+            await sendAction('nextSession');
+        }
+
+        // 初期ロード
+        window.addEventListener('load', () => {
+            addLog('デバッグツール起動', 'success');
+            testGet();
+        });
+    </script>
+</body>
+</html>

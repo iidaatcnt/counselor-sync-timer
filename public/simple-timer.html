@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer - シンプル版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .timers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .timer-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .timer-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .timer-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .session-timer .timer-display {
+            color: #ffd700;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f44336, #da190b);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .settings {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status.running {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status.paused {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .timers {
+                grid-template-columns: 1fr;
+            }
+            .settings {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SessionTimer</h1>
+        
+        <div class="timers">
+            <div class="timer-box">
+                <div class="timer-label">全体タイマー</div>
+                <div class="timer-display" id="totalTimer">02:00:00</div>
+            </div>
+            
+            <div class="timer-box session-timer">
+                <div class="timer-label">セッションタイマー</div>
+                <div class="timer-display" id="sessionTimer">20:00</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-start" id="btnStart">開始</button>
+            <button class="btn btn-pause" id="btnPause" disabled>一時停止</button>
+            <button class="btn btn-next" id="btnNext">次のセッション</button>
+            <button class="btn btn-reset" id="btnReset">リセット</button>
+        </div>
+        
+        <div class="settings">
+            <div class="input-group">
+                <label for="totalMinutes">全体時間（分）</label>
+                <input type="number" id="totalMinutes" value="120" min="1" max="999">
+            </div>
+            <div class="input-group">
+                <label for="sessionMinutes">セッション時間（分）</label>
+                <input type="number" id="sessionMinutes" value="20" min="1" max="60">
+            </div>
+            <button class="btn btn-apply" id="btnApply">設定を適用</button>
+        </div>
+        
+        <div class="status paused" id="status">一時停止中</div>
+    </div>
+
+    <script>
+        // タイマーの状態管理（クライアント側）
+        let timerState = {
+            totalDuration: 120 * 60 * 1000,  // 2時間（ミリ秒）
+            sessionDuration: 20 * 60 * 1000, // 20分（ミリ秒）
+            totalRemaining: 120 * 60 * 1000,
+            sessionRemaining: 20 * 60 * 1000,
+            isRunning: false,
+            lastUpdateTime: null
+        };
+
+        let updateInterval = null;
+
+        // 時間フォーマット関数
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+
+        // タイマー更新
+        function updateTimers() {
+            if (timerState.isRunning) {
+                const now = Date.now();
+                const elapsed = now - timerState.lastUpdateTime;
+                
+                timerState.totalRemaining = Math.max(0, timerState.totalRemaining - elapsed);
+                timerState.sessionRemaining = Math.max(0, timerState.sessionRemaining - elapsed);
+                
+                timerState.lastUpdateTime = now;
+                
+                // セッションが終了したら音を鳴らす（オプション）
+                if (timerState.sessionRemaining === 0) {
+                    playAlert();
+                    // 自動的に次のセッションへ
+                    nextSession();
+                }
+                
+                // 全体タイマーが終了
+                if (timerState.totalRemaining === 0) {
+                    pauseTimer();
+                    playAlert();
+                }
+            }
+            
+            // 表示更新
+            document.getElementById('totalTimer').textContent = formatTime(timerState.totalRemaining);
+            document.getElementById('sessionTimer').textContent = formatTime(timerState.sessionRemaining);
+            
+            // 状態保存
+            saveState();
+        }
+
+        // タイマー開始
+        function startTimer() {
+            if (!timerState.isRunning) {
+                timerState.isRunning = true;
+                timerState.lastUpdateTime = Date.now();
+                
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnPause').disabled = false;
+                document.getElementById('status').textContent = '実行中';
+                document.getElementById('status').className = 'status running';
+                
+                updateTimers();
+            }
+        }
+
+        // タイマー一時停止
+        function pauseTimer() {
+            if (timerState.isRunning) {
+                timerState.isRunning = false;
+                
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnPause').disabled = true;
+                document.getElementById('status').textContent = '一時停止中';
+                document.getElementById('status').className = 'status paused';
+                
+                updateTimers();
+            }
+        }
+
+        // タイマーリセット
+        function resetTimer() {
+            pauseTimer();
+            
+            const totalMinutes = parseInt(document.getElementById('totalMinutes').value);
+            const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value);
+            
+            timerState.totalDuration = totalMinutes * 60 * 1000;
+            timerState.sessionDuration = sessionMinutes * 60 * 1000;
+            timerState.totalRemaining = timerState.totalDuration;
+            timerState.sessionRemaining = timerState.sessionDuration;
+            
+            updateTimers();
+        }
+
+        // 次のセッション
+        function nextSession() {
+            timerState.sessionRemaining = timerState.sessionDuration;
+            updateTimers();
+        }
+
+        // 設定適用
+        function applySettings() {
+            if (confirm('設定を適用してタイマーをリセットしますか？')) {
+                resetTimer();
+            }
+        }
+
+        // アラート音（簡易版）
+        function playAlert() {
+            // ビープ音を生成
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.frequency.value = 880; // A5音
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+            
+            oscillator.start(context.currentTime);
+            oscillator.stop(context.currentTime + 0.5);
+        }
+
+        // 状態保存（localStorage）
+        function saveState() {
+            localStorage.setItem('timerState', JSON.stringify(timerState));
+        }
+
+        // 状態読み込み
+        function loadState() {
+            const saved = localStorage.getItem('timerState');
+            if (saved) {
+                timerState = JSON.parse(saved);
+                if (timerState.isRunning) {
+                    // 実行中だった場合は一時停止状態にする
+                    timerState.isRunning = false;
+                }
+            }
+            updateTimers();
+        }
+
+        // イベントリスナー設定
+        document.getElementById('btnStart').addEventListener('click', startTimer);
+        document.getElementById('btnPause').addEventListener('click', pauseTimer);
+        document.getElementById('btnReset').addEventListener('click', () => {
+            if (confirm('タイマーをリセットしますか？')) {
+                resetTimer();
+            }
+        });
+        document.getElementById('btnNext').addEventListener('click', () => {
+            if (confirm('次のセッションに進みますか？')) {
+                nextSession();
+            }
+        });
+        document.getElementById('btnApply').addEventListener('click', applySettings);
+
+        // 初期化
+        loadState();
+        
+        // 定期更新（100ms毎）
+        updateInterval = setInterval(updateTimers, 100);
+        
+        // ページを離れる時にクリーンアップ
+        window.addEventListener('beforeunload', () => {
+            saveState();
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>

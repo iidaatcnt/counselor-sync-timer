@@ -1,30 +1,7 @@
 {
-  "name": "counselor-sync-timer",
+  "name": "session-timer",
   "version": "1.0.0",
-  "description": "相談会での複数カウンセラーによる同期セッション管理タイマー",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "timer",
-    "counselor",
-    "session",
-    "sync",
-    "vercel"
-  ],
-  "author": "iidaatcnt",
-  "license": "MIT",
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "dependencies": {
-    "express": "^4.18.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/iidaatcnt/counselor-sync-timer.git"
+    "start": "echo 'Use vercel dev to run locally'"
   }
 }

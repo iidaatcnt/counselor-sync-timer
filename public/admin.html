@@ -48,617 +48,508 @@
             z-index: 1000;
         }
 
-        .connected { 
-            background: rgba(76, 175, 80, 0.9);
-            border-color: rgba(76, 175, 80, 0.5);
+        .connected {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
         }
-        .connecting { 
-            background: rgba(255, 152, 0, 0.9);
-            border-color: rgba(255, 152, 0, 0.5);
+
+        .disconnected {
+            background: linear-gradient(135deg, #f44336, #da190b);
         }
-        .error { 
-            background: rgba(244, 67, 54, 0.9);
-            border-color: rgba(244, 67, 54, 0.5);
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .timer-panel {
+            flex: 2;
+        }
+
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
         }
 
         .timer-display {
-            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
-        .session-timer {
-            font-size: 4rem;
-            font-weight: bold;
+        .timer-label {
+            font-size: 1.1rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .session-label {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
             opacity: 0.9;
         }
 
-        .total-timer {
-            font-size: 1.5rem;
-            opacity: 0.8;
-        }
-
-        .status-display {
-            font-size: 1.1rem;
-            margin: 20px 0;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            display: inline-block;
-        }
-
-        /* 音声通知トグルボタン */
-        .sound-toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px 0;
-            gap: 15px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: #ccc;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-switch.active {
-            background: #4CAF50;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .toggle-switch.active .toggle-slider {
-            transform: translateX(30px);
-        }
-
-        .sound-status {
-            font-size: 1.1rem;
+        .timer-value {
+            font-size: 3rem;
             font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
-        .sound-status.enabled {
-            color: #4CAF50;
+        .session-timer .timer-value {
+            font-size: 2.5rem;
+            color: #ffd700;
         }
 
-        .sound-status.disabled {
-            color: #f44336;
-        }
-
-        .controls {
-            padding: 40px 20px;
+        .control-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 20px;
-            max-width: 600px;
-            margin: 0 auto;
+            gap: 15px;
+            margin-bottom: 30px;
         }
 
-        .control-btn {
-            padding: 15px 25px;
-            font-size: 1.1rem;
-            font-weight: bold;
+        .btn {
+            padding: 15px 20px;
             border: none;
             border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
-        .start-btn { background: #4CAF50; color: white; }
-        .pause-btn { background: #FF9800; color: white; }
-        .reset-btn { background: #f44336; color: white; }
-        .next-btn { background: #2196F3; color: white; }
-
-        .control-btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
-        .control-btn:active {
+        .btn:active:not(:disabled) {
             transform: translateY(0);
         }
 
-        /* テストボタン */
-        .test-controls {
+        .btn-start {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .settings {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
             padding: 20px;
+        }
+
+        .settings h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-apply {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .status-indicator {
             text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .test-btn {
-            margin: 5px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.2rem;
             font-weight: bold;
-            transition: all 0.3s ease;
         }
 
-        .sound-test-btn {
-            background: #FF6B35;
-            color: white;
+        .status-running {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
         }
 
-        .force-notify-btn {
-            background: #8E44AD;
-            color: white;
+        .status-paused {
+            background: rgba(255, 152, 0, 0.3);
         }
 
-        .debug-btn {
-            background: #3498DB;
-            color: white;
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
         }
 
-        /* レスポンシブ対応 */
+        .info-text {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
-            .session-timer {
-                font-size: 3rem;
+            .main-content {
+                flex-direction: column;
             }
             
-            .controls {
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
+            .timer-value {
+                font-size: 2.5rem;
             }
             
-            .control-btn {
-                padding: 12px 20px;
-                font-size: 1rem;
+            .session-timer .timer-value {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">接続中...</div>
+    <div class="connection-status connected" id="connectionStatus">接続済み</div>
     
     <div class="header">
-        <h1>⚙️ SessionTimer - 管理者</h1>
+        <h1>SessionTimer 管理画面</h1>
+        <p>タイマーのコントロールパネル</p>
     </div>
-
-    <div class="timer-display">
-        <div class="session-timer" id="sessionTimer">20:00</div>
-        <div class="session-label">現在のセッション</div>
-        <div class="total-timer">全体残り時間: <span id="totalTimer">02:00:00</span></div>
-        
-        <div class="status-display">
-            <span id="statusText">ステータス: 一時停止中</span>
-        </div>
-
-        <!-- 音声通知トグルボタン -->
-        <div class="sound-toggle-container">
-            <span>🔊 音声通知:</span>
-            <div class="toggle-switch" id="soundToggle">
-                <div class="toggle-slider"></div>
+    
+    <div class="main-content">
+        <div class="panel timer-panel">
+            <div class="timer-display">
+                <div class="timer-label">全体タイマー</div>
+                <div class="timer-value" id="totalTimer">02:00:00</div>
             </div>
-            <span class="sound-status disabled" id="soundStatus">OFF</span>
+            
+            <div class="timer-display session-timer">
+                <div class="timer-label">セッションタイマー</div>
+                <div class="timer-value" id="sessionTimer">20:00</div>
+            </div>
+            
+            <div class="status-indicator status-paused" id="statusIndicator">
+                一時停止中
+            </div>
+            
+            <div class="info-text">
+                💡 スマート版：操作時のみAPIと通信し、表示はクライアント側で計算します。
+                API使用量を大幅に削減しながら、正確な時間管理を実現しています。
+            </div>
         </div>
-    </div>
-
-    <div class="controls">
-        <button class="control-btn start-btn" onclick="startTimer()">▶️ Start</button>
-        <button class="control-btn pause-btn" onclick="pauseTimer()">⏸️ Pause</button>
-        <button class="control-btn reset-btn" onclick="resetTimer()">🔄 Reset</button>
-        <button class="control-btn next-btn" onclick="nextSession()">⏭️ Next</button>
-    </div>
-
-    <div class="test-controls">
-        <button class="test-btn sound-test-btn" onclick="testSound()">🔊 音声テスト</button>
-        <button class="test-btn debug-btn" onclick="showDebugInfo()">📊 デバッグ情報</button>
-        <button class="test-btn force-notify-btn" onclick="forceNotification()">🚨 強制通知</button>
-        <button class="test-btn" style="background: #2ECC71; color: white;" onclick="testConnection()">🌐 接続テスト</button>
+        
+        <div class="panel control-panel">
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btnStart">開始</button>
+                <button class="btn btn-pause" id="btnPause" disabled>一時停止</button>
+                <button class="btn btn-next" id="btnNext">次のセッション</button>
+                <button class="btn btn-reset" id="btnReset">リセット</button>
+            </div>
+            
+            <div class="settings">
+                <h3>タイマー設定</h3>
+                <div class="input-group">
+                    <label for="totalMinutes">全体時間（分）</label>
+                    <input type="number" id="totalMinutes" value="120" min="1" max="999">
+                </div>
+                <div class="input-group">
+                    <label for="sessionMinutes">セッション時間（分）</label>
+                    <input type="number" id="sessionMinutes" value="20" min="1" max="60">
+                </div>
+                <button class="btn btn-apply" id="btnApply">設定を適用</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        console.log('🚀 SessionTimer 管理者ページが開始されました');
+        const API_URL = '/api/timer';
+        const UPDATE_INTERVAL = 100; // 表示更新間隔
         
-        // DOM要素の取得
-        const totalTimerElement = document.getElementById('totalTimer');
-        const sessionTimerElement = document.getElementById('sessionTimer');
-        const statusElement = document.getElementById('statusText');
-        const connectionStatusElement = document.getElementById('connectionStatus');
-        const soundToggle = document.getElementById('soundToggle');
-        const soundStatus = document.getElementById('soundStatus');
+        // タイマー状態
+        let timerData = {
+            totalDuration: 7200000,
+            sessionDuration: 1200000,
+            isRunning: false,
+            startedAt: null,
+            pausedAt: null,
+            totalElapsed: 0,
+            sessionElapsed: 0,
+            serverTime: null,
+            localTimeOffset: 0
+        };
         
-        let isConnected = false;
-        let pollInterval = null;
-        let audioInitialized = false;
-        let soundEnabled = false;
-        let previousSessionTime = null;
-        let notifiedTimes = new Set();
-
-        // 音声関連の変数
-        let audioContext = null;
-        let gainNode = null;
-
-        // 音声通知の初期化（改善版）
-        async function initializeAudio() {
+        let updateInterval = null;
+        
+        // 時間フォーマット
+        function formatTime(milliseconds) {
+            milliseconds = Math.max(0, milliseconds);
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+        
+        // APIから状態を取得
+        async function fetchTimerState() {
             try {
-                console.log('🔊 音声初期化を開始');
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('API Error');
                 
-                // AudioContextの作成
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const data = await response.json();
+                const localTime = Date.now();
                 
-                // GainNodeの作成（音量調整用）
-                gainNode = audioContext.createGain();
-                gainNode.connect(audioContext.destination);
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                console.log('State fetched:', data);
                 
-                // モバイルの場合、ユーザーインタラクション後にresumeが必要
-                if (audioContext.state === 'suspended') {
-                    console.log('📱 AudioContext suspended - ユーザーインタラクション待ち');
-                }
+                // 時刻オフセットを計算
+                timerData.localTimeOffset = data.serverTime - localTime;
                 
-                audioInitialized = true;
-                console.log('✅ 音声システム初期化完了');
+                // データを更新
+                timerData.totalDuration = data.totalDuration;
+                timerData.sessionDuration = data.sessionDuration;
+                timerData.isRunning = data.isRunning;
+                timerData.startedAt = data.startedAt;
+                timerData.pausedAt = data.pausedAt;
+                timerData.totalElapsed = data.totalElapsed;
+                timerData.sessionElapsed = data.sessionElapsed;
+                timerData.serverTime = data.serverTime;
+                
+                // ボタン状態更新
+                updateButtonStates();
+                
                 return true;
             } catch (error) {
-                console.error('❌ 音声初期化エラー:', error);
+                console.error('Fetch error:', error);
                 return false;
             }
         }
-
-        // AudioContextのresume（ユーザーインタラクション後）
-        async function resumeAudioContext() {
-            if (audioContext && audioContext.state === 'suspended') {
-                try {
-                    await audioContext.resume();
-                    console.log('✅ AudioContext resumed');
-                } catch (error) {
-                    console.error('❌ AudioContext resume error:', error);
-                }
-            }
-        }
-
-        // 改善されたビープ音生成
-        function playBeep(count = 1, frequency = 800, duration = 200, interval = 300) {
-            if (!soundEnabled || !audioInitialized || !audioContext) {
-                console.log('🔇 音声無効または未初期化');
-                return;
-            }
-
-            // AudioContextをresumeする
-            resumeAudioContext();
-
-            console.log(`🔊 ビープ音再生開始: ${count}回, ${frequency}Hz`);
-
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => {
-                    try {
-                        const oscillator = audioContext.createOscillator();
-                        const localGain = audioContext.createGain();
-                        
-                        oscillator.connect(localGain);
-                        localGain.connect(gainNode);
-                        
-                        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                        oscillator.type = 'sine';
-                        
-                        // エンベロープ（音の立ち上がり・立ち下がり）
-                        localGain.gain.setValueAtTime(0, audioContext.currentTime);
-                        localGain.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.01);
-                        localGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-                        
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + duration / 1000);
-                        
-                        console.log(`🎵 ビープ${i + 1}/${count} 再生`);
-                    } catch (error) {
-                        console.error(`❌ ビープ${i + 1} 再生エラー:`, error);
-                    }
-                }, i * interval);
-            }
-        }
-
-        // 音声通知の切り替え
-        function toggleSound() {
-            if (!audioInitialized) {
-                initializeAudio().then(success => {
-                    if (success) {
-                        soundEnabled = true;
-                        updateSoundUI();
-                        // テスト音を再生
-                        playBeep(1, 800, 200);
-                    }
-                });
-            } else {
-                soundEnabled = !soundEnabled;
-                updateSoundUI();
-                
-                if (soundEnabled) {
-                    // 有効にした時のテスト音
-                    resumeAudioContext().then(() => {
-                        playBeep(1, 800, 200);
-                    });
-                }
-            }
-        }
-
-        // 音声UIの更新
-        function updateSoundUI() {
-            if (soundEnabled) {
-                soundToggle.classList.add('active');
-                soundStatus.textContent = 'ON';
-                soundStatus.className = 'sound-status enabled';
-            } else {
-                soundToggle.classList.remove('active');
-                soundStatus.textContent = 'OFF';
-                soundStatus.className = 'sound-status disabled';
-            }
-        }
-
-        // セッション時間に基づく音声通知
-        function checkSessionNotifications(currentSessionTime) {
-            if (!soundEnabled || !audioInitialized) return;
-
-            const elapsedTime = 1200 - currentSessionTime; // 経過時間（秒）
-            const elapsedMinutes = Math.floor(elapsedTime / 60);
-            const elapsedSeconds = elapsedTime % 60;
+        
+        // APIにアクションを送信
+        async function sendAction(action, additionalData = {}) {
+            // ボタンを一時的に無効化
+            disableAllButtons();
             
-            // 通知タイミング（経過時間ベース）
-            const notifications = [
-                { time: 600, beeps: 1 },   // 10分経過
-                { time: 900, beeps: 2 },   // 15分経過
-                { time: 1020, beeps: 3 },  // 17分経過
-                { time: 1080, beeps: 4 },  // 18分経過
-                { time: 1140, beeps: 5 },  // 19分経過
-                { time: 1200, beeps: 6 }   // 20分経過
-            ];
-
-            notifications.forEach(notification => {
-                if (elapsedTime >= notification.time && !notifiedTimes.has(notification.time)) {
-                    const remainingTime = Math.max(0, currentSessionTime);
-                    const remainingMinutes = Math.floor(remainingTime / 60);
-                    const remainingSeconds = remainingTime % 60;
-                    
-                    console.log(`🔔 通知: ${elapsedMinutes}分${elapsedSeconds}秒経過, 残り${remainingMinutes}分${remainingSeconds}秒 (${notification.beeps}回ビープ)`);
-                    playBeep(notification.beeps, 800, 200, 400);
-                    notifiedTimes.add(notification.time);
+            try {
+                console.log('Sending action:', action);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action,
+                        ...additionalData
+                    })
+                });
+                
+                if (!response.ok) throw new Error('API Error');
+                
+                const data = await response.json();
+                console.log('Action response:', data);
+                
+                // レスポンスから状態を更新
+                if (data.state) {
+                    const localTime = Date.now();
+                    timerData.localTimeOffset = data.state.serverTime - localTime;
+                    timerData.totalDuration = data.state.totalDuration;
+                    timerData.sessionDuration = data.state.sessionDuration;
+                    timerData.isRunning = data.state.isRunning;
+                    timerData.startedAt = data.state.startedAt;
+                    timerData.pausedAt = data.state.pausedAt;
+                    timerData.totalElapsed = data.state.totalElapsed;
+                    timerData.sessionElapsed = data.state.sessionElapsed;
+                    timerData.serverTime = data.state.serverTime;
+                }
+                
+                // ボタン状態を更新
+                updateButtonStates();
+                
+            } catch (error) {
+                console.error('Send error:', error);
+                alert('操作に失敗しました。再度お試しください。');
+                // エラー時もボタン状態を更新
+                updateButtonStates();
+            }
+        }
+        
+        // 残り時間を計算
+        function calculateRemaining() {
+            const now = Date.now() + timerData.localTimeOffset;
+            
+            let totalRemaining = timerData.totalDuration;
+            let sessionRemaining = timerData.sessionDuration;
+            
+            if (timerData.isRunning && timerData.startedAt) {
+                const elapsed = now - timerData.startedAt;
+                totalRemaining = timerData.totalDuration - (timerData.totalElapsed + elapsed);
+                sessionRemaining = timerData.sessionDuration - (timerData.sessionElapsed + elapsed);
+            } else if (timerData.totalElapsed > 0 || timerData.sessionElapsed > 0) {
+                totalRemaining = timerData.totalDuration - timerData.totalElapsed;
+                sessionRemaining = timerData.sessionDuration - timerData.sessionElapsed;
+            }
+            
+            totalRemaining = Math.max(0, totalRemaining);
+            sessionRemaining = Math.max(0, sessionRemaining);
+            
+            return { totalRemaining, sessionRemaining };
+        }
+        
+        // 表示を更新
+        function updateDisplay() {
+            const { totalRemaining, sessionRemaining } = calculateRemaining();
+            
+            document.getElementById('totalTimer').textContent = formatTime(totalRemaining);
+            document.getElementById('sessionTimer').textContent = formatTime(sessionRemaining);
+            
+            const statusEl = document.getElementById('statusIndicator');
+            if (timerData.isRunning) {
+                statusEl.textContent = '実行中';
+                statusEl.className = 'status-indicator status-running';
+            } else {
+                statusEl.textContent = '一時停止中';
+                statusEl.className = 'status-indicator status-paused';
+            }
+        }
+        
+        // ボタン状態を更新
+        function updateButtonStates() {
+            document.getElementById('btnStart').disabled = timerData.isRunning;
+            document.getElementById('btnPause').disabled = !timerData.isRunning;
+            document.getElementById('btnNext').disabled = false;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('btnApply').disabled = false;
+        }
+        
+        // すべてのボタンを無効化
+        function disableAllButtons() {
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnPause').disabled = true;
+            document.getElementById('btnNext').disabled = true;
+            document.getElementById('btnReset').disabled = true;
+            document.getElementById('btnApply').disabled = true;
+        }
+        
+        // イベントリスナー設定
+        function setupEventListeners() {
+            document.getElementById('btnStart').addEventListener('click', () => {
+                sendAction('start');
+            });
+            
+            document.getElementById('btnPause').addEventListener('click', () => {
+                sendAction('pause');
+            });
+            
+            document.getElementById('btnNext').addEventListener('click', () => {
+                if (confirm('次のセッションに進みますか？')) {
+                    sendAction('nextSession');
+                }
+            });
+            
+            document.getElementById('btnReset').addEventListener('click', () => {
+                if (confirm('タイマーをリセットしますか？')) {
+                    const totalMinutes = parseInt(document.getElementById('totalMinutes').value);
+                    const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value);
+                    sendAction('reset', { totalMinutes, sessionMinutes });
+                }
+            });
+            
+            document.getElementById('btnApply').addEventListener('click', () => {
+                const totalMinutes = parseInt(document.getElementById('totalMinutes').value);
+                const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value);
+                
+                if (totalMinutes > 0 && sessionMinutes > 0) {
+                    sendAction('setTime', { totalMinutes, sessionMinutes });
+                    alert('設定を適用しました');
+                } else {
+                    alert('有効な時間を入力してください');
                 }
             });
         }
-
-        // 時間フォーマット関数
-        function formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
+        
+        // 初期化
+        async function init() {
+            console.log('Initializing admin panel...');
             
-            if (hours > 0) {
-                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-            } else {
-                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            setupEventListeners();
+            
+            // 初回データ取得
+            const success = await fetchTimerState();
+            
+            if (success) {
+                // 表示更新を開始
+                updateInterval = setInterval(updateDisplay, UPDATE_INTERVAL);
+                updateDisplay();
             }
         }
-
-        // タイマー状態の更新
-        function updateTimerDisplay(data) {
-            if (data.sessionTime !== previousSessionTime) {
-                checkSessionNotifications(data.sessionTime);
-                previousSessionTime = data.sessionTime;
-            }
-            
-            sessionTimerElement.textContent = formatTime(data.sessionTime);
-            totalTimerElement.textContent = formatTime(data.totalTime);
-            statusElement.textContent = `ステータス: ${data.isPaused ? '一時停止中' : '実行中'}`;
-        }
-
-        // 接続状態の更新
-        function updateConnectionStatus(status) {
-            console.log(`📡 管理者ページ：接続状態更新 -> ${status}`);
-            
-            const element = connectionStatusElement;
-            if (!element) {
-                console.error('❌ 管理者ページ：接続状態要素が見つかりません');
-                return;
-            }
-            
-            // クラスをクリアしてから新しいクラスを設定
-            element.className = `connection-status ${status}`;
-            
-            // テキストを設定
-            switch(status) {
-                case 'connected':
-                    element.textContent = '接続済み';
-                    console.log('✅ 管理者ページ：接続済み状態に更新');
-                    break;
-                case 'connecting':
-                    element.textContent = '接続中...';
-                    console.log('🔄 管理者ページ：接続中状態に更新');
-                    break;
-                case 'error':
-                    element.textContent = '接続エラー';
-                    console.log('❌ 管理者ページ：エラー状態に更新');
-                    break;
-                default:
-                    element.textContent = '不明';
-                    console.log('❓ 管理者ページ：不明状態');
-            }
-        }
-
-        // API呼び出し
-        async function fetchTimerState() {
-            try {
-                const response = await fetch('/api/timer');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.json();
-                updateTimerDisplay(data);
-                
-                // 接続状態の更新を確実に行う
-                if (!isConnected) {
-                    isConnected = true;
-                    updateConnectionStatus('connected');
-                    console.log('🌐 管理者ページ：サーバーに接続しました');
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('❌ 管理者ページ API取得エラー:', error);
-                if (isConnected) {
-                    isConnected = false;
-                    updateConnectionStatus('error');
-                }
-                throw error;
-            }
-        }
-
-        // 制御関数
-        async function startTimer() {
-            await resumeAudioContext();
-            const response = await fetch('/api/timer/start', { method: 'POST' });
-            if (response.ok) {
-                notifiedTimes.clear(); // 通知履歴をクリア
-                console.log('▶️ タイマー開始');
-            }
-        }
-
-        async function pauseTimer() {
-            await fetch('/api/timer/pause', { method: 'POST' });
-            console.log('⏸️ タイマー一時停止');
-        }
-
-        async function resetTimer() {
-            await fetch('/api/timer/reset', { method: 'POST' });
-            notifiedTimes.clear();
-            console.log('🔄 タイマーリセット');
-        }
-
-        async function nextSession() {
-            await fetch('/api/timer/next', { method: 'POST' });
-            notifiedTimes.clear();
-            console.log('⏭️ 次のセッション');
-        }
-
-        // テスト関数
-        async function testSound() {
-            await resumeAudioContext();
-            if (!soundEnabled) {
-                alert('音声通知をONにしてください');
-                return;
-            }
-            console.log('🔊 音声テスト実行');
-            playBeep(3, 800, 200, 400);
-        }
-
-        function showDebugInfo() {
-            const info = `
-🔊 音声状態: ${soundEnabled ? 'ON' : 'OFF'}
-🎛️ AudioContext: ${audioContext ? audioContext.state : 'なし'}
-🔔 通知履歴: ${Array.from(notifiedTimes).join(', ')}
-🌐 接続状態: ${isConnected ? '接続済み' : '未接続'}
-            `;
-            alert(info);
-        }
-
-        async function forceNotification() {
-            await resumeAudioContext();
-            if (!soundEnabled) {
-                alert('音声通知をONにしてください');
-                return;
-            }
-            console.log('🚨 強制通知テスト');
-            playBeep(5, 1000, 300, 500);
-        }
-
-        // 接続テスト機能
-        async function testConnection() {
-            console.log('🌐 管理者ページ：手動接続テスト開始');
-            updateConnectionStatus('connecting');
-            
-            try {
-                const response = await fetch('/api/timer');
-                console.log('📡 管理者ページ：API応答ステータス:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('📊 管理者ページ：取得データ:', data);
-                
-                updateTimerDisplay(data);
-                isConnected = true;
-                updateConnectionStatus('connected');
-                
-                alert('✅ 接続テスト成功！\nサーバーとの通信は正常です。');
-                
-            } catch (error) {
-                console.error('❌ 管理者ページ：接続テストエラー:', error);
-                isConnected = false;
-                updateConnectionStatus('error');
-                alert(`❌ 接続テスト失敗\nエラー: ${error.message}`);
-            }
-        }
-
-        // イベントリスナー
-        soundToggle.addEventListener('click', toggleSound);
-
-        // ページ読み込み後の初期化
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('📱 管理者ページ読み込み完了');
-            
-            // 音声システムの準備
-            await initializeAudio();
-            updateSoundUI();
-            
-            // 接続状態を明示的に「接続中」に設定
-            updateConnectionStatus('connecting');
-            console.log('🔄 管理者ページ：API接続を開始します');
-            
-            // 初期データ取得（少し遅延させて確実に実行）
-            setTimeout(async () => {
-                try {
-                    console.log('🌐 管理者ページ：初期データ取得を試行');
-                    await fetchTimerState();
-                    console.log('✅ 管理者ページ：初期データ取得成功');
-                } catch (error) {
-                    console.error('❌ 管理者ページ：初期データ取得失敗:', error);
-                    updateConnectionStatus('error');
-                }
-            }, 500);
-            
-            // ポーリング開始
-            pollInterval = setInterval(async () => {
-                try {
-                    await fetchTimerState();
-                } catch (error) {
-                    console.error('❌ 管理者ページ：ポーリングエラー:', error);
-                }
-            }, 1000);
-            console.log('🔄 管理者ページ：ポーリング開始');
-        });
-
-        // ページ離脱時のクリーンアップ
+        
+        // クリーンアップ
         window.addEventListener('beforeunload', () => {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-            }
-            if (audioContext) {
-                audioContext.close();
-            }
+            if (updateInterval) clearInterval(updateInterval);
         });
+        
+        // 起動
+        init();
     </script>
 </body>
 </html>
