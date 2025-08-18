@@ -30,7 +30,7 @@
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             border: 1px solid rgba(255, 255, 255, 0.18);
             text-align: center;
-            min-width: 400px;
+            min-width: 450px;
         }
 
         h1 {
@@ -40,12 +40,58 @@
         }
 
         .timer-display {
-            font-size: 5em;
+            font-size: 7em;
             font-weight: bold;
             margin: 30px 0;
             font-variant-numeric: tabular-nums;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
             letter-spacing: 0.05em;
+            position: relative;
+        }
+
+        .timer-label {
+            font-size: 0.15em;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+
+        .progress-ring {
+            margin: 20px auto;
+            width: 200px;
+            height: 200px;
+            position: relative;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-circle {
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 8;
+            fill: none;
+        }
+
+        .progress-ring-path {
+            stroke: #4CAF50;
+            stroke-width: 8;
+            fill: none;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .time-warning {
+            stroke: #FFA500 !important;
+        }
+
+        .time-critical {
+            stroke: #FF4444 !important;
         }
 
         .status {
@@ -94,22 +140,6 @@
             transform: none;
         }
 
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
-
         .timer-state {
             margin-top: 20px;
             padding: 10px;
@@ -122,6 +152,91 @@
             margin-top: 10px;
             font-size: 0.9em;
             opacity: 0.7;
+        }
+
+        .milestone-indicator {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            font-size: 0.95em;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sound-controls {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: .4s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .time-up {
+            animation: blink 1s infinite;
+            color: #ff6b6b;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
         }
 
         @keyframes spin {
@@ -138,13 +253,38 @@
 <body>
     <div class="container">
         <h1>SessionTimer</h1>
-        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        
+        <div class="progress-ring">
+            <svg>
+                <circle class="progress-ring-circle" cx="100" cy="100" r="90"/>
+                <circle class="progress-ring-path" id="progressPath" cx="100" cy="100" r="90"/>
+            </svg>
+        </div>
+        
+        <div class="timer-display" id="timerDisplay">
+            <span class="timer-label">残り時間</span>
+            20:00
+        </div>
+        
+        <div class="milestone-indicator" id="milestoneIndicator">
+            待機中
+        </div>
+        
         <div class="status disconnected" id="connectionStatus">接続中...</div>
-        <div class="timer-state" id="timerState">待機中</div>
+        <div class="timer-state" id="timerState">停止中</div>
         
         <button class="sync-button" id="syncButton" onclick="manualSync()">
             <span id="syncButtonText">🔄 手動同期</span>
         </button>
+        
+        <div class="sound-controls">
+            <span>🔊 音声案内</span>
+            <label class="switch">
+                <input type="checkbox" id="soundEnabled" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="soundStatus">ON</span>
+        </div>
         
         <div class="last-sync" id="lastSync">最終同期: --</div>
     </div>
@@ -155,17 +295,30 @@
             isRunning: false,
             isPaused: false,
             startTime: null,
-            pausedDuration: 0,
-            lastPauseTime: null,
-            currentTime: 0
+            totalDuration: 20 * 60 * 1000, // デフォルト20分
+            remainingTime: 20 * 60 * 1000,
+            pausedAt: null
         };
 
         let displayInterval = null;
         let lastSyncTime = null;
+        let soundEnabled = true;
+        let soundsPlayed = new Set();
+
+        // 音声ファイルのプリロード
+        const sounds = {
+            start: new Audio('/sounds/counselor_start.wav'),
+            min10: new Audio('/sounds/counselor_10min.wav'),
+            min15: new Audio('/sounds/counselor_15min.wav'),
+            min17: new Audio('/sounds/counselor_17min.wav'),
+            min18: new Audio('/sounds/counselor_18min.wav'),
+            min19: new Audio('/sounds/counselor_19min.wav'),
+            end: new Audio('/sounds/counselor_end.wav')
+        };
 
         // 設定
         const API_BASE_URL = window.location.origin;
-        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新（ローカル計算）
+        const DISPLAY_UPDATE_INTERVAL = 100;
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
@@ -174,31 +327,166 @@
         const lastSyncDisplay = document.getElementById('lastSync');
         const syncButton = document.getElementById('syncButton');
         const syncButtonText = document.getElementById('syncButtonText');
+        const milestoneIndicator = document.getElementById('milestoneIndicator');
+        const progressPath = document.getElementById('progressPath');
+        const soundCheckbox = document.getElementById('soundEnabled');
+        const soundStatusText = document.getElementById('soundStatus');
 
-        // タイマー表示の更新（ローカル計算）
+        // プログレスリングの設定
+        const radius = 90;
+        const circumference = radius * 2 * Math.PI;
+        progressPath.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressPath.style.strokeDashoffset = 0; // 初期は満タン（カウントダウン用）
+
+        // 音声設定の変更
+        soundCheckbox.addEventListener('change', (e) => {
+            soundEnabled = e.target.checked;
+            soundStatusText.textContent = soundEnabled ? 'ON' : 'OFF';
+        });
+
+        // タイマー表示の更新
         function updateDisplay() {
+            let displayTime;
+            let elapsed = 0;
+            
             if (timerState.isRunning && !timerState.isPaused) {
-                const now = Date.now();
-                const elapsed = now - timerState.startTime - timerState.pausedDuration;
-                timerState.currentTime = elapsed;
+                // カウントダウン表示のための計算
+                elapsed = Date.now() - timerState.startTime;
+                timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
+                displayTime = timerState.remainingTime;
+                
+                // 音声ガイドのトリガー
+                checkAndPlaySound(elapsed);
+                
+                // マイルストーン表示の更新
+                updateMilestoneIndicator(elapsed);
             } else if (timerState.isPaused) {
-                // 一時停止中は最後の時間を保持
-                const elapsed = timerState.lastPauseTime - timerState.startTime - timerState.pausedDuration;
-                timerState.currentTime = elapsed;
+                // 一時停止中は保存された残り時間を表示
+                displayTime = timerState.remainingTime || timerState.totalDuration;
+            } else {
+                // 停止中は総時間または残り時間を表示
+                displayTime = timerState.remainingTime || timerState.totalDuration || (20 * 60 * 1000);
             }
 
-            const totalSeconds = Math.floor(timerState.currentTime / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const totalSeconds = Math.ceil(displayTime / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
 
-            timerDisplay.textContent = 
-                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timerDisplay.innerHTML = `
+                <span class="timer-label">残り時間</span>
+                ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}
+            `;
+            
+            // プログレスリングの更新（totalDurationが存在する場合のみ）
+            if (timerState.totalDuration) {
+                updateProgressRing(displayTime, timerState.totalDuration);
+            }
+            
+            // タイムアップの表示
+            if (displayTime === 0 && timerState.isRunning) {
+                timerDisplay.classList.add('time-up');
+                milestoneIndicator.textContent = '⏰ 時間終了';
+                // 自動停止
+                timerState.isRunning = false;
+            } else {
+                timerDisplay.classList.remove('time-up');
+            }
+        }
+
+        // プログレスリングの更新
+        function updateProgressRing(remaining, total) {
+            if (!total || total === 0) return;
+            
+            const progress = Math.max(0, Math.min(1, remaining / total));
+            const offset = circumference - (progress * circumference);
+            progressPath.style.strokeDashoffset = offset;
+            
+            // 色の変更
+            if (remaining <= 60000) { // 1分以下
+                progressPath.classList.add('time-critical');
+                progressPath.classList.remove('time-warning');
+            } else if (remaining <= 180000) { // 3分以下
+                progressPath.classList.add('time-warning');
+                progressPath.classList.remove('time-critical');
+            } else {
+                progressPath.classList.remove('time-warning', 'time-critical');
+            }
+        }
+
+        // マイルストーン表示の更新
+        function updateMilestoneIndicator(elapsed) {
+            if (!timerState.totalDuration) return;
+            
+            const elapsedMinutes = Math.floor(elapsed / 60000);
+            const remainingMillis = timerState.totalDuration - elapsed;
+            const remainingMinutes = Math.ceil(remainingMillis / 60000);
+            
+            if (remainingMinutes <= 0) {
+                milestoneIndicator.textContent = '⏰ 時間終了';
+            } else if (remainingMinutes === 1) {
+                milestoneIndicator.textContent = '⚠️ 残り1分 - まとめをお願いします';
+            } else if (remainingMinutes === 2) {
+                milestoneIndicator.textContent = '⚠️ 残り2分';
+            } else if (remainingMinutes === 3) {
+                milestoneIndicator.textContent = '⚠️ 残り3分 - まとめの準備を';
+            } else if (remainingMinutes === 5) {
+                milestoneIndicator.textContent = '📍 残り5分';
+            } else if (elapsedMinutes === 10) {
+                milestoneIndicator.textContent = '📍 10分経過 - 折り返し地点';
+            } else if (elapsedMinutes === 15) {
+                milestoneIndicator.textContent = '📍 15分経過';
+            } else if (elapsedMinutes < 1) {
+                milestoneIndicator.textContent = '🚀 相談開始';
+            } else {
+                milestoneIndicator.textContent = `進行中（${elapsedMinutes}分経過）`;
+            }
+        }
+
+        // 音声ガイドのチェックと再生
+        function checkAndPlaySound(elapsed) {
+            if (!soundEnabled) return;
+            
+            const elapsedMinutes = elapsed / 60000;
+            
+            if (elapsed < 1000 && !soundsPlayed.has('start')) {
+                playSound('start');
+                soundsPlayed.add('start');
+            }
+            if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
+                playSound('min10');
+                soundsPlayed.add('min10');
+            }
+            if (elapsedMinutes >= 15 && elapsedMinutes < 15.1 && !soundsPlayed.has('min15')) {
+                playSound('min15');
+                soundsPlayed.add('min15');
+            }
+            if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
+                playSound('min17');
+                soundsPlayed.add('min17');
+            }
+            if (elapsedMinutes >= 18 && elapsedMinutes < 18.1 && !soundsPlayed.has('min18')) {
+                playSound('min18');
+                soundsPlayed.add('min18');
+            }
+            if (elapsedMinutes >= 19 && elapsedMinutes < 19.1 && !soundsPlayed.has('min19')) {
+                playSound('min19');
+                soundsPlayed.add('min19');
+            }
+            if (elapsedMinutes >= 20 && elapsedMinutes < 20.1 && !soundsPlayed.has('end')) {
+                playSound('end');
+                soundsPlayed.add('end');
+            }
+        }
+
+        // 音声再生
+        function playSound(soundKey) {
+            if (sounds[soundKey]) {
+                sounds[soundKey].play().catch(e => console.log('音声再生エラー:', e));
+            }
         }
 
         // サーバーとの同期
         async function syncWithServer() {
-            // ボタンを無効化
             syncButton.disabled = true;
             syncButtonText.innerHTML = '<span class="syncing">⟳</span> 同期中...';
             
@@ -215,13 +503,20 @@
                 }
 
                 const data = await response.json();
+                console.log('同期データ:', data); // デバッグ用
                 
                 // サーバーの状態でローカル状態を更新
-                timerState.isRunning = data.isRunning;
-                timerState.isPaused = data.isPaused;
-                timerState.startTime = data.startTime;
-                timerState.pausedDuration = data.pausedDuration || 0;
-                timerState.lastPauseTime = data.lastPauseTime;
+                timerState.isRunning = data.isRunning || false;
+                timerState.isPaused = data.isPaused || false;
+                timerState.startTime = data.startTime || null;
+                timerState.totalDuration = data.totalDuration || (20 * 60 * 1000);
+                timerState.remainingTime = data.remainingTime || data.totalDuration || (20 * 60 * 1000);
+                timerState.pausedAt = data.pausedAt || null;
+                
+                // 音声再生済みリストをクリア（新しいセッション）
+                if (!timerState.isRunning) {
+                    soundsPlayed.clear();
+                }
 
                 // 接続状態の更新
                 connectionStatus.textContent = '接続済み';
@@ -231,12 +526,17 @@
                 if (timerState.isRunning && !timerState.isPaused) {
                     timerStateDisplay.textContent = '実行中';
                     timerStateDisplay.className = 'timer-state pulse';
+                    
+                    // 実行中の場合、経過時間を計算してマイルストーン表示を更新
+                    const elapsed = Date.now() - timerState.startTime;
+                    updateMilestoneIndicator(elapsed);
                 } else if (timerState.isPaused) {
                     timerStateDisplay.textContent = '一時停止中';
                     timerStateDisplay.className = 'timer-state';
                 } else {
                     timerStateDisplay.textContent = '停止中';
                     timerStateDisplay.className = 'timer-state';
+                    milestoneIndicator.textContent = '待機中';
                 }
 
                 // 表示を更新
@@ -251,7 +551,6 @@
                 connectionStatus.textContent = '接続エラー';
                 connectionStatus.className = 'status disconnected';
             } finally {
-                // ボタンを有効化
                 syncButton.disabled = false;
                 syncButtonText.innerHTML = '🔄 手動同期';
             }
@@ -283,6 +582,9 @@
 
         // 初期化
         function initialize() {
+            // 初期表示（同期前）
+            updateDisplay();
+            
             // 起動時に1回だけ同期
             syncWithServer();
 
@@ -290,25 +592,23 @@
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
 
             // 最終同期時刻の表示を定期更新
-            setInterval(updateLastSyncDisplay, 10000); // 10秒ごとに更新
+            setInterval(updateLastSyncDisplay, 10000);
         }
 
         // ページ表示/非表示の処理
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                // ページが非表示になったら表示更新を停止
                 clearInterval(displayInterval);
             } else {
-                // ページが表示されたら同期して更新を再開
-                syncWithServer(); // 再表示時に同期
+                syncWithServer();
                 displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
             }
         });
 
-        // キーボードショートカット（Rキーで同期）
+        // キーボードショートカット
         document.addEventListener('keydown', (e) => {
             if (e.key === 'r' || e.key === 'R') {
-                if (!e.ctrlKey && !e.metaKey) { // ページリロードを防ぐ
+                if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     manualSync();
                 }
