@@ -273,10 +273,6 @@
         <div class="status disconnected" id="connectionStatus">接続中...</div>
         <div class="timer-state" id="timerState">停止中</div>
         
-        <button class="sync-button" id="syncButton" onclick="manualSync()">
-            <span id="syncButtonText">🔄 手動同期</span>
-        </button>
-        
         <div class="sound-controls">
             <span>🔊 音声案内</span>
             <label class="switch">
@@ -331,8 +327,6 @@
         const connectionStatus = document.getElementById('connectionStatus');
         const timerStateDisplay = document.getElementById('timerState');
         const lastSyncDisplay = document.getElementById('lastSync');
-        const syncButton = document.getElementById('syncButton');
-        const syncButtonText = document.getElementById('syncButtonText');
         const milestoneIndicator = document.getElementById('milestoneIndicator');
         const progressPath = document.getElementById('progressPath');
         const soundCheckbox = document.getElementById('soundEnabled');
@@ -523,9 +517,6 @@
 
         // サーバーとの同期
         async function syncWithServer() {
-            syncButton.disabled = true;
-            syncButtonText.innerHTML = '<span class="syncing">⟳</span> 同期中...';
-            
             try {
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
                     method: 'GET',
@@ -604,9 +595,6 @@
                 console.error('同期エラー:', error);
                 connectionStatus.textContent = '接続エラー';
                 connectionStatus.className = 'status disconnected';
-            } finally {
-                syncButton.disabled = false;
-                syncButtonText.innerHTML = '🔄 手動同期';
             }
         }
 
@@ -628,11 +616,6 @@
             }
         }
 
-        // 手動同期
-        function manualSync() {
-            console.log('手動同期を実行');
-            syncWithServer();
-        }
 
 
         // 初期化
@@ -665,15 +648,6 @@
             }
         });
 
-        // キーボードショートカット
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'r' || e.key === 'R') {
-                if (!e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    manualSync();
-                }
-            }
-        });
 
         // 初期化実行
         initialize();
