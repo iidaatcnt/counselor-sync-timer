@@ -263,7 +263,7 @@
         
         <div class="timer-display" id="timerDisplay">
             <span class="timer-label">残り時間</span>
-            20:00
+            05:00
         </div>
         
         <div class="milestone-indicator" id="milestoneIndicator">
@@ -295,12 +295,13 @@
             isRunning: false,
             isPaused: false,
             startTime: null,
-            totalDuration: 20 * 60 * 1000, // デフォルト20分
-            remainingTime: 20 * 60 * 1000,
+            totalDuration: 5 * 60 * 1000, // デフォルト5分
+            remainingTime: 5 * 60 * 1000,
             pausedAt: null
         };
 
         let displayInterval = null;
+        let syncInterval = null;
         let lastSyncTime = null;
         let soundEnabled = true;
         let soundsPlayed = new Set();
@@ -309,7 +310,6 @@
         const sounds = {
             start: new Audio('/sounds/counselor_start.wav'),
             min10: new Audio('/sounds/counselor_10min.wav'),
-            min15: new Audio('/sounds/counselor_15min.wav'),
             min17: new Audio('/sounds/counselor_17min.wav'),
             min18: new Audio('/sounds/counselor_18min.wav'),
             min19: new Audio('/sounds/counselor_19min.wav'),
@@ -319,6 +319,7 @@
         // 設定
         const API_BASE_URL = window.location.origin;
         const DISPLAY_UPDATE_INTERVAL = 100;
+        const SYNC_INTERVAL = 1000; // 1秒ごとに同期
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
@@ -365,12 +366,26 @@
                 displayTime = timerState.remainingTime || timerState.totalDuration;
             } else {
                 // 停止中は総時間または残り時間を表示
-                displayTime = timerState.remainingTime || timerState.totalDuration || (20 * 60 * 1000);
+                displayTime = timerState.remainingTime || timerState.totalDuration;
+            }
+
+            // NaNチェック
+            if (!displayTime || isNaN(displayTime) || displayTime < 0) {
+                displayTime = timerState.totalDuration || (5 * 60 * 1000);
             }
 
             const totalSeconds = Math.ceil(displayTime / 1000);
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
+
+            // NaNチェック
+            if (isNaN(minutes) || isNaN(seconds)) {
+                timerDisplay.innerHTML = `
+                    <span class="timer-label">残り時間</span>
+                    05:00
+                `;
+                return;
+            }
 
             timerDisplay.innerHTML = `
                 <span class="timer-label">残り時間</span>
@@ -378,7 +393,7 @@
             `;
             
             // プログレスリングの更新（totalDurationが存在する場合のみ）
-            if (timerState.totalDuration) {
+            if (timerState.totalDuration && !isNaN(timerState.totalDuration)) {
                 updateProgressRing(displayTime, timerState.totalDuration);
             }
             
@@ -433,8 +448,6 @@
                 milestoneIndicator.textContent = '📍 残り5分';
             } else if (elapsedMinutes === 10) {
                 milestoneIndicator.textContent = '📍 10分経過 - 折り返し地点';
-            } else if (elapsedMinutes === 15) {
-                milestoneIndicator.textContent = '📍 15分経過';
             } else if (elapsedMinutes < 1) {
                 milestoneIndicator.textContent = '🚀 相談開始';
             } else {
@@ -455,10 +468,6 @@
             if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
                 playSound('min10');
                 soundsPlayed.add('min10');
-            }
-            if (elapsedMinutes >= 15 && elapsedMinutes < 15.1 && !soundsPlayed.has('min15')) {
-                playSound('min15');
-                soundsPlayed.add('min15');
             }
             if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
                 playSound('min17');
@@ -506,12 +515,28 @@
                 console.log('同期データ:', data); // デバッグ用
                 
                 // サーバーの状態でローカル状態を更新
+                const oldState = { ...timerState };
+                
                 timerState.isRunning = data.isRunning || false;
                 timerState.isPaused = data.isPaused || false;
                 timerState.startTime = data.startTime || null;
-                timerState.totalDuration = data.totalDuration || (20 * 60 * 1000);
-                timerState.remainingTime = data.remainingTime || data.totalDuration || (20 * 60 * 1000);
+                
+                // サーバーからの値を優先し、なければ現在の値を保持
+                if (data.totalDuration !== undefined && data.totalDuration > 0) {
+                    timerState.totalDuration = data.totalDuration;
+                    timerState.remainingTime = data.remainingTime || data.totalDuration;
+                } else {
+                    timerState.totalDuration = oldState.totalDuration || (5 * 60 * 1000);
+                    timerState.remainingTime = oldState.remainingTime || (5 * 60 * 1000);
+                }
+                
                 timerState.pausedAt = data.pausedAt || null;
+                
+                console.log('HTTP同期更新:', {
+                    totalDuration: timerState.totalDuration,
+                    remainingTime: timerState.remainingTime,
+                    isRunning: timerState.isRunning
+                });
                 
                 console.log('更新後のタイマー状態:', timerState); // デバッグ用
                 
@@ -582,16 +607,20 @@
             syncWithServer();
         }
 
+
         // 初期化
         function initialize() {
             // 初期表示（同期前）
             updateDisplay();
             
-            // 起動時に1回だけ同期
+            // 起動時に1回同期
             syncWithServer();
 
             // 表示の定期更新（ローカル計算のみ）
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
+            
+            // 定期的なHTTPポーリング同期
+            syncInterval = setInterval(syncWithServer, SYNC_INTERVAL);
 
             // 最終同期時刻の表示を定期更新
             setInterval(updateLastSyncDisplay, 10000);
@@ -601,9 +630,11 @@
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearInterval(displayInterval);
+                clearInterval(syncInterval);
             } else {
                 syncWithServer();
                 displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
+                syncInterval = setInterval(syncWithServer, SYNC_INTERVAL);
             }
         });
 

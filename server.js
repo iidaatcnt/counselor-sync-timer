@@ -1,17 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const WebSocket = require('ws');
-const http = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// HTTPサーバーの作成
-const server = http.createServer(app);
-
-// WebSocketサーバーの設定
-const wss = new WebSocket.Server({ server });
 
 // ミドルウェア
 app.use(cors());
@@ -25,59 +17,12 @@ let timerState = {
     startTime: null,
     pausedDuration: 0,
     lastPauseTime: null,
-    currentTime: 0
+    currentTime: 0,
+    totalDuration: 5 * 60 * 1000, // デフォルト5分
+    remainingTime: 5 * 60 * 1000
 };
 
-// 接続されているWebSocketクライアントを管理
-const clients = new Set();
-
-// WebSocket接続の処理
-wss.on('connection', (ws) => {
-    console.log('新しいWebSocketクライアントが接続しました');
-    clients.add(ws);
-
-    // 現在のタイマー状態を新しいクライアントに送信
-    ws.send(JSON.stringify({
-        type: 'timer-update',
-        state: timerState,
-        timestamp: Date.now()
-    }));
-
-    // メッセージ受信時の処理
-    ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-            console.log('WebSocketメッセージ受信:', data);
-
-            // すべてのクライアントに状態更新を送信（送信元を除く）
-            broadcastToClients(data, ws);
-        } catch (error) {
-            console.error('WebSocketメッセージ処理エラー:', error);
-        }
-    });
-
-    // 接続終了時の処理
-    ws.on('close', () => {
-        console.log('WebSocketクライアントが切断しました');
-        clients.delete(ws);
-    });
-
-    // エラー処理
-    ws.on('error', (error) => {
-        console.error('WebSocketエラー:', error);
-        clients.delete(ws);
-    });
-});
-
-// すべてのWebSocketクライアントにメッセージを送信
-function broadcastToClients(data, excludeClient = null) {
-    const message = JSON.stringify(data);
-    clients.forEach((client) => {
-        if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
-            client.send(message);
-        }
-    });
-}
+// WebSocketを削除 - HTTPポーリングのみ使用
 
 // タイマーの現在の状態を計算
 function calculateCurrentState() {
@@ -85,9 +30,11 @@ function calculateCurrentState() {
         const now = Date.now();
         const elapsed = now - timerState.startTime - timerState.pausedDuration;
         timerState.currentTime = elapsed;
+        timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
     } else if (timerState.isPaused) {
         const elapsed = timerState.lastPauseTime - timerState.startTime - timerState.pausedDuration;
         timerState.currentTime = elapsed;
+        timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
     }
     return timerState;
 }
@@ -97,6 +44,12 @@ function calculateCurrentState() {
 // タイマー状態の取得
 app.get('/api/timer', (req, res) => {
     const currentState = calculateCurrentState();
+    console.log('GET /api/timer - 現在の状態:', {
+        isRunning: currentState.isRunning,
+        isPaused: currentState.isPaused,
+        totalDuration: currentState.totalDuration,
+        remainingTime: currentState.remainingTime
+    });
     res.json(currentState);
 });
 
@@ -105,6 +58,10 @@ app.post('/api/timer', (req, res) => {
     const { action, state, timestamp } = req.body;
 
     console.log(`タイマーアクション: ${action}`, state);
+    console.log('アクション前のサーバー状態:', {
+        totalDuration: timerState.totalDuration,
+        remainingTime: timerState.remainingTime
+    });
 
     try {
         switch (action) {
@@ -116,6 +73,12 @@ app.post('/api/timer', (req, res) => {
                     timerState.startTime = Date.now();
                     timerState.pausedDuration = 0;
                     timerState.lastPauseTime = null;
+                    
+                    // クライアントから送られてきた時間設定を保存
+                    if (state && state.totalDuration) {
+                        timerState.totalDuration = state.totalDuration;
+                        timerState.remainingTime = state.totalDuration;
+                    }
                 } else if (timerState.isPaused) {
                     // 一時停止からの再開
                     const pauseDuration = Date.now() - timerState.lastPauseTime;
@@ -129,6 +92,15 @@ app.post('/api/timer', (req, res) => {
                 if (timerState.isRunning && !timerState.isPaused) {
                     timerState.isPaused = true;
                     timerState.lastPauseTime = Date.now();
+                    
+                    // 現在の残り時間を計算して保存
+                    const elapsed = Date.now() - timerState.startTime - timerState.pausedDuration;
+                    timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
+                }
+                
+                // クライアントから送られてきた時間設定を保持
+                if (state && state.totalDuration) {
+                    timerState.totalDuration = state.totalDuration;
                 }
                 break;
 
@@ -139,6 +111,8 @@ app.post('/api/timer', (req, res) => {
                 timerState.startTime = null;
                 timerState.pausedDuration = 0;
                 timerState.lastPauseTime = null;
+                // 停止時は時間設定は保持し、残り時間を総時間にリセット
+                timerState.remainingTime = timerState.totalDuration;
                 break;
 
             case 'reset':
@@ -148,6 +122,12 @@ app.post('/api/timer', (req, res) => {
                 timerState.startTime = null;
                 timerState.pausedDuration = 0;
                 timerState.lastPauseTime = null;
+                
+                // クライアントから送られてきた時間設定を保存
+                if (state && state.totalDuration) {
+                    timerState.totalDuration = state.totalDuration;
+                    timerState.remainingTime = state.totalDuration;
+                }
                 break;
 
             default:
@@ -157,14 +137,12 @@ app.post('/api/timer', (req, res) => {
                 });
         }
 
-        // WebSocketで全クライアントに通知
-        broadcastToClients({
-            type: 'timer-update',
-            action: action,
-            state: timerState,
-            timestamp: Date.now(),
-            source: 'api'
+        console.log('アクション後のサーバー状態:', {
+            totalDuration: timerState.totalDuration,
+            remainingTime: timerState.remainingTime
         });
+
+        // WebSocket削除 - クライアントは定期ポーリングで取得
 
         res.json({ 
             success: true, 
@@ -186,8 +164,7 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'healthy',
         timestamp: Date.now(),
-        timerState: timerState,
-        connectedClients: clients.size
+        timerState: timerState
     });
 });
 
@@ -205,24 +182,15 @@ app.get('/admin.html', (req, res) => {
 });
 
 // サーバー起動
-server.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`サーバーが起動しました: http://localhost:${PORT}`);
     console.log(`管理画面: http://localhost:${PORT}/admin`);
     console.log(`表示画面: http://localhost:${PORT}/`);
+    console.log('HTTPポーリング方式で動作中');
 });
 
 // グレースフルシャットダウン
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
-    server.close(() => {
-        console.log('HTTP server closed');
-        // WebSocketクライアントをすべて閉じる
-        clients.forEach((client) => {
-            client.close();
-        });
-        wss.close(() => {
-            console.log('WebSocket server closed');
-            process.exit(0);
-        });
-    });
+    process.exit(0);
 });

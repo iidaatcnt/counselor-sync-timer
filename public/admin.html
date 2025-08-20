@@ -297,14 +297,14 @@
     <div class="container">
         <h1>SessionTimer 管理画面</h1>
         
-        <div class="timer-display" id="timerDisplay">20:00</div>
+        <div class="timer-display" id="timerDisplay">05:00</div>
         
         <div class="time-setting">
             <h3>⏰ 時間設定</h3>
             <div class="time-inputs">
                 <div class="time-input-group">
                     <label for="minutesInput">分</label>
-                    <input type="number" id="minutesInput" min="0" max="60" value="20">
+                    <input type="number" id="minutesInput" min="0" max="60" value="5">
                 </div>
                 <span class="time-separator">:</span>
                 <div class="time-input-group">
@@ -324,7 +324,6 @@
         <div class="controls">
             <button id="startBtn" class="btn-start">開始</button>
             <button id="pauseBtn" class="btn-pause" disabled>一時停止</button>
-            <button id="stopBtn" class="btn-stop" disabled>停止</button>
             <button id="resetBtn" class="btn-reset">リセット</button>
         </div>
 
@@ -355,12 +354,13 @@
             isRunning: false,
             isPaused: false,
             startTime: null,
-            totalDuration: 20 * 60 * 1000, // デフォルト20分
-            remainingTime: 20 * 60 * 1000,
+            totalDuration: 5 * 60 * 1000, // デフォルト5分
+            remainingTime: 5 * 60 * 1000,
             pausedAt: null
         };
 
         let displayInterval = null;
+        let syncInterval = null;
         let apiCallCount = 0;
         let soundEnabled = true;
         let soundsPlayed = new Set();
@@ -369,7 +369,6 @@
         const sounds = {
             start: new Audio('/sounds/counselor_start.wav'),
             min10: new Audio('/sounds/counselor_10min.wav'),
-            min15: new Audio('/sounds/counselor_15min.wav'),
             min17: new Audio('/sounds/counselor_17min.wav'),
             min18: new Audio('/sounds/counselor_18min.wav'),
             min19: new Audio('/sounds/counselor_19min.wav'),
@@ -380,6 +379,7 @@
         // 設定
         const API_BASE_URL = window.location.origin;
         const DISPLAY_UPDATE_INTERVAL = 100;
+        const SYNC_INTERVAL = 1000; // 1秒ごとに同期
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
@@ -388,7 +388,6 @@
         const apiCallsDisplay = document.getElementById('apiCalls');
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
-        const stopBtn = document.getElementById('stopBtn');
         const resetBtn = document.getElementById('resetBtn');
         const minutesInput = document.getElementById('minutesInput');
         const secondsInput = document.getElementById('secondsInput');
@@ -416,6 +415,7 @@
             if (!timerState.isRunning) {
                 timerState.totalDuration = (minutes * 60 + seconds) * 1000;
                 timerState.remainingTime = timerState.totalDuration;
+                console.log('時間設定を更新:', { minutes, seconds, totalDuration: timerState.totalDuration });
                 updateDisplay();
             }
         }
@@ -439,12 +439,25 @@
                 // 音声ガイドのトリガー
                 checkAndPlaySound(elapsed);
             } else {
-                displayTime = timerState.remainingTime;
+                displayTime = timerState.remainingTime || timerState.totalDuration;
+            }
+
+            // NaNチェック - 入力フィールドから現在の設定を取得
+            if (!displayTime || isNaN(displayTime) || displayTime < 0) {
+                const minutes = parseInt(minutesInput.value) || 5;
+                const seconds = parseInt(secondsInput.value) || 0;
+                displayTime = (minutes * 60 + seconds) * 1000;
             }
 
             const totalSeconds = Math.ceil(displayTime / 1000);
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
+
+            // NaNチェック
+            if (isNaN(minutes) || isNaN(seconds)) {
+                timerDisplay.textContent = '05:00';
+                return;
+            }
 
             timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             
@@ -466,10 +479,6 @@
             if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
                 playSound('min10');
                 soundsPlayed.add('min10');
-            }
-            if (elapsedMinutes >= 15 && elapsedMinutes < 15.1 && !soundsPlayed.has('min15')) {
-                playSound('min15');
-                soundsPlayed.add('min15');
             }
             if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
                 playSound('min17');
@@ -523,6 +532,12 @@
                         totalDuration: timerState.totalDuration,
                         remainingTime: timerState.remainingTime
                     };
+                } else if (action === 'pause') {
+                    // 一時停止時も現在の状態を送信
+                    requestData.state = {
+                        totalDuration: timerState.totalDuration,
+                        remainingTime: timerState.remainingTime
+                    };
                 }
                 
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
@@ -554,6 +569,10 @@
                     connectionStatus.className = 'status connected';
                     updateApiStats();
                     
+                    // 表示を即座に更新
+                    updateDisplay();
+                    updateButtonStates();
+                    
                     setTimeout(() => {
                         connectionStatus.textContent = '待機中';
                         connectionStatus.className = 'status';
@@ -575,7 +594,6 @@
             if (timerState.isRunning && !timerState.isPaused) {
                 startBtn.disabled = true;
                 pauseBtn.disabled = false;
-                stopBtn.disabled = false;
                 resetBtn.disabled = true;
                 minutesInput.disabled = true;
                 secondsInput.disabled = true;
@@ -583,15 +601,13 @@
                 startBtn.disabled = false;
                 startBtn.textContent = '再開';
                 pauseBtn.disabled = true;
-                stopBtn.disabled = false;
-                resetBtn.disabled = true;
+                resetBtn.disabled = false;
                 minutesInput.disabled = true;
                 secondsInput.disabled = true;
             } else {
                 startBtn.disabled = false;
                 startBtn.textContent = '開始';
                 pauseBtn.disabled = true;
-                stopBtn.disabled = true;
                 resetBtn.disabled = false;
                 minutesInput.disabled = false;
                 secondsInput.disabled = false;
@@ -601,12 +617,19 @@
         // タイマー開始
         async function startTimer() {
             if (!timerState.isRunning) {
+                // 入力値を再取得して設定
+                const minutes = parseInt(minutesInput.value) || 0;
+                const seconds = parseInt(secondsInput.value) || 0;
+                const totalDuration = (minutes * 60 + seconds) * 1000;
+                
+                console.log('タイマー開始:', { minutes, seconds, totalDuration });
+                
                 // 新規開始
                 timerState.isRunning = true;
                 timerState.isPaused = false;
                 timerState.startTime = Date.now();
-                timerState.totalDuration = (parseInt(minutesInput.value) * 60 + parseInt(secondsInput.value)) * 1000;
-                timerState.remainingTime = timerState.totalDuration;
+                timerState.totalDuration = totalDuration;
+                timerState.remainingTime = totalDuration;
                 soundsPlayed.clear();
                 
                 // 開始音声
@@ -621,9 +644,17 @@
                 timerState.pausedAt = null;
             }
 
+            // 即座にUI更新
+            updateButtonStates();
+            updateDisplay();
+
             const result = await sendStateToServer('start');
-            if (result.success) {
+            if (!result.success) {
+                // 失敗時は元に戻す
+                timerState.isRunning = false;
+                timerState.isPaused = false;
                 updateButtonStates();
+                updateDisplay();
             }
         }
 
@@ -633,37 +664,48 @@
                 timerState.isPaused = true;
                 timerState.pausedAt = Date.now();
 
+                // 即座にUI更新
+                updateButtonStates();
+                updateDisplay();
+
                 const result = await sendStateToServer('pause');
-                if (result.success) {
+                if (!result.success) {
+                    // 失敗時は元に戻す
+                    timerState.isPaused = false;
+                    timerState.pausedAt = null;
                     updateButtonStates();
+                    updateDisplay();
                 }
             }
         }
 
-        // タイマー停止
-        async function stopTimer() {
-            timerState.isRunning = false;
-            timerState.isPaused = false;
-            timerState.remainingTime = timerState.totalDuration;
-            soundsPlayed.clear();
-
-            const result = await sendStateToServer('stop');
-            if (result.success) {
-                updateButtonStates();
-                updateDisplay();
-            }
-        }
+        // 停止機能を削除 - リセットで代用
 
         // タイマーリセット
         async function resetTimer() {
+            const oldState = { ...timerState };
+            
+            // 入力値を再取得して設定
+            const minutes = parseInt(minutesInput.value) || 0;
+            const seconds = parseInt(secondsInput.value) || 0;
+            const totalDuration = (minutes * 60 + seconds) * 1000;
+            
+            console.log('タイマーリセット:', { minutes, seconds, totalDuration });
+            
             timerState.isRunning = false;
             timerState.isPaused = false;
-            timerState.totalDuration = (parseInt(minutesInput.value) * 60 + parseInt(secondsInput.value)) * 1000;
-            timerState.remainingTime = timerState.totalDuration;
+            timerState.totalDuration = totalDuration;
+            timerState.remainingTime = totalDuration;
             soundsPlayed.clear();
 
+            // 即座にUI更新
+            updateButtonStates();
+            updateDisplay();
+
             const result = await sendStateToServer('reset');
-            if (result.success) {
+            if (!result.success) {
+                // 失敗時は元に戻す
+                timerState = oldState;
                 updateButtonStates();
                 updateDisplay();
             }
@@ -672,7 +714,6 @@
         // イベントリスナー
         startBtn.addEventListener('click', startTimer);
         pauseBtn.addEventListener('click', pauseTimer);
-        stopBtn.addEventListener('click', stopTimer);
         resetBtn.addEventListener('click', resetTimer);
 
         // 初期状態を取得
@@ -696,14 +737,25 @@
                 timerState.isRunning = data.isRunning || false;
                 timerState.isPaused = data.isPaused || false;
                 timerState.startTime = data.startTime || null;
-                timerState.totalDuration = data.totalDuration || (20 * 60 * 1000);
-                timerState.remainingTime = data.remainingTime || data.totalDuration || (20 * 60 * 1000);
-                timerState.pausedAt = data.pausedAt || null;
                 
-                // 時間入力フィールドを更新
-                const totalSeconds = Math.floor(timerState.totalDuration / 1000);
-                minutesInput.value = Math.floor(totalSeconds / 60);
-                secondsInput.value = totalSeconds % 60;
+                // タイマーが実行中または一時停止中の場合のみサーバーの時間設定を適用
+                if ((data.isRunning || data.isPaused) && data.totalDuration !== undefined && data.totalDuration > 0) {
+                    timerState.totalDuration = data.totalDuration;
+                    timerState.remainingTime = data.remainingTime || data.totalDuration;
+                    
+                    // 時間入力フィールドを更新
+                    const totalSeconds = Math.floor(timerState.totalDuration / 1000);
+                    minutesInput.value = Math.floor(totalSeconds / 60);
+                    secondsInput.value = totalSeconds % 60;
+                } else {
+                    // タイマーが停止中の場合は現在の入力値を保持
+                    const minutes = parseInt(minutesInput.value) || 5;
+                    const seconds = parseInt(secondsInput.value) || 0;
+                    timerState.totalDuration = (minutes * 60 + seconds) * 1000;
+                    timerState.remainingTime = timerState.totalDuration;
+                }
+                
+                timerState.pausedAt = data.pausedAt || null;
                 
                 connectionStatus.textContent = '待機中';
                 connectionStatus.className = 'status';
@@ -718,6 +770,8 @@
             }
         }
 
+        // WebSocket削除 - HTTPポーリングのみ使用
+
         // 初期化
         function initialize() {
             // 初期状態を取得
@@ -725,15 +779,24 @@
             
             // 表示の定期更新
             displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
+            
+            // 定期的な同期
+            syncInterval = setInterval(() => {
+                getInitialState();
+            }, SYNC_INTERVAL); // 1秒ごと
         }
 
         // ページ表示/非表示の処理
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearInterval(displayInterval);
+                clearInterval(syncInterval);
             } else {
+                getInitialState();
                 displayInterval = setInterval(updateDisplay, DISPLAY_UPDATE_INTERVAL);
-                updateDisplay();
+                syncInterval = setInterval(() => {
+                    getInitialState();
+                }, SYNC_INTERVAL);
             }
         });
 
