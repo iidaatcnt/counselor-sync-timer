@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c5f2d 0%, #1c3d1d 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -286,6 +286,10 @@
             <span id="soundStatus">ON</span>
         </div>
         
+        <button class="sync-button" id="soundTestButton" onclick="testSound()">
+            🎵 音声テスト
+        </button>
+        
         <div class="last-sync" id="lastSync">最終同期: --</div>
     </div>
 
@@ -492,6 +496,37 @@
             if (sounds[soundKey]) {
                 sounds[soundKey].play().catch(e => console.log('音声再生エラー:', e));
             }
+        }
+
+        // 音声テスト機能
+        function testSound() {
+            if (!soundEnabled) {
+                alert('音声案内がOFFになっています。ONにしてからテストしてください。');
+                return;
+            }
+            
+            const testSounds = ['start', 'min10', 'min17', 'min18', 'min19', 'end'];
+            let currentIndex = 0;
+            
+            const soundTestButton = document.getElementById('soundTestButton');
+            soundTestButton.disabled = true;
+            soundTestButton.textContent = '🎵 テスト中...';
+            
+            function playNextSound() {
+                if (currentIndex < testSounds.length) {
+                    const soundKey = testSounds[currentIndex];
+                    console.log(`音声テスト: ${soundKey}`);
+                    playSound(soundKey);
+                    currentIndex++;
+                    setTimeout(playNextSound, 2000); // 2秒間隔でテスト
+                } else {
+                    soundTestButton.disabled = false;
+                    soundTestButton.textContent = '🎵 音声テスト';
+                    alert('音声テストが完了しました。');
+                }
+            }
+            
+            playNextSound();
         }
 
         // サーバーとの同期
