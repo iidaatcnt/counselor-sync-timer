@@ -580,46 +580,57 @@
             const remainingMinutes = (timerState.totalDuration - elapsed) / 60000;
             const remainingSeconds = (timerState.totalDuration - elapsed) / 1000;
             
-            // 開始音（最初の5秒以内）- 同期遅延を考慮
+            // 開始音（最初の5秒以内）- 他の音声より優先
             if (elapsed < 5000 && !soundsPlayed.has('start')) {
                 console.log('開始音を再生します');
                 playSound('start');
                 soundsPlayed.add('start');
+                return; // 開始音再生時は他の音声をスキップ
             }
             
-            // 中間地点音（10分以上のタイマーの場合）
+            // 開始から10秒は他の音声を再生しない（開始音との重複を避ける）
+            if (elapsed < 10000) {
+                return;
+            }
+            
+            // 中間地点音（20分以上のタイマーの場合のみ）
             if (totalMinutes >= 20 && elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
                 console.log('10分経過音を再生します');
                 playSound('min10');
                 soundsPlayed.add('min10');
+                return;
             }
             
-            // 残り3分音（15分音声を使用）
-            if (remainingMinutes <= 3.1 && remainingMinutes > 2.9 && !soundsPlayed.has('3min_before')) {
-                console.log('残り3分音を再生します');
-                playSound('min15');
-                soundsPlayed.add('3min_before');
-            }
-            
-            // 残り2分音
-            if (remainingMinutes <= 2.1 && remainingMinutes > 1.9 && !soundsPlayed.has('2min_before')) {
-                console.log('残り2分音を再生します');
-                playSound('min18');
-                soundsPlayed.add('2min_before');
-            }
-            
-            // 残り1分音
-            if (remainingMinutes <= 1.1 && remainingMinutes > 0.9 && !soundsPlayed.has('1min_before')) {
-                console.log('残り1分音を再生します');
-                playSound('min19');
-                soundsPlayed.add('1min_before');
-            }
-            
-            // 終了音
+            // 終了音（最優先）
             if (remainingSeconds <= 1 && !soundsPlayed.has('end')) {
                 console.log('終了音を再生します');
                 playSound('end');
                 soundsPlayed.add('end');
+                return;
+            }
+            
+            // 残り3分音（15分音声を使用）- 5分以上のタイマーのみ
+            if (totalMinutes >= 5 && remainingMinutes <= 3.1 && remainingMinutes > 2.9 && !soundsPlayed.has('3min_before')) {
+                console.log('残り3分音を再生します');
+                playSound('min15');
+                soundsPlayed.add('3min_before');
+                return;
+            }
+            
+            // 残り2分音 - 4分以上のタイマーのみ
+            if (totalMinutes >= 4 && remainingMinutes <= 2.1 && remainingMinutes > 1.9 && !soundsPlayed.has('2min_before')) {
+                console.log('残り2分音を再生します');
+                playSound('min18');
+                soundsPlayed.add('2min_before');
+                return;
+            }
+            
+            // 残り1分音 - 3分以上のタイマーのみ
+            if (totalMinutes >= 3 && remainingMinutes <= 1.1 && remainingMinutes > 0.9 && !soundsPlayed.has('1min_before')) {
+                console.log('残り1分音を再生します');
+                playSound('min19');
+                soundsPlayed.add('1min_before');
+                return;
             }
         }
 
