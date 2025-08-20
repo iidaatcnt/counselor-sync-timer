@@ -505,20 +505,43 @@
                 return;
             }
             
-            const testSounds = ['start', 'min10', 'min17', 'min18', 'min19', 'end'];
+            const testSounds = [
+                { key: 'start', name: '開始音' },
+                { key: 'min10', name: '10分経過音' },
+                { key: 'min17', name: '17分経過音' },
+                { key: 'min18', name: '18分経過音' },
+                { key: 'min19', name: '19分経過音' },
+                { key: 'end', name: '終了音' }
+            ];
             let currentIndex = 0;
             
             const soundTestButton = document.getElementById('soundTestButton');
             soundTestButton.disabled = true;
-            soundTestButton.textContent = '🎵 テスト中...';
             
             function playNextSound() {
                 if (currentIndex < testSounds.length) {
-                    const soundKey = testSounds[currentIndex];
-                    console.log(`音声テスト: ${soundKey}`);
-                    playSound(soundKey);
+                    const sound = testSounds[currentIndex];
+                    soundTestButton.textContent = `🎵 ${sound.name}テスト中...`;
+                    
+                    console.log(`音声テスト: ${sound.key}`);
+                    
+                    // 音声ファイルの存在確認とエラーハンドリング
+                    if (sounds[sound.key]) {
+                        sounds[sound.key].play()
+                            .then(() => {
+                                console.log(`${sound.name}再生成功`);
+                            })
+                            .catch(e => {
+                                console.error(`${sound.name}再生エラー:`, e);
+                                alert(`${sound.name}の再生に失敗しました。音声ファイルが見つからない可能性があります。`);
+                            });
+                    } else {
+                        console.error(`音声オブジェクトが見つかりません: ${sound.key}`);
+                        alert(`音声ファイル ${sound.key} が見つかりません。`);
+                    }
+                    
                     currentIndex++;
-                    setTimeout(playNextSound, 2000); // 2秒間隔でテスト
+                    setTimeout(playNextSound, 2500); // 2.5秒間隔でテスト
                 } else {
                     soundTestButton.disabled = false;
                     soundTestButton.textContent = '🎵 音声テスト';

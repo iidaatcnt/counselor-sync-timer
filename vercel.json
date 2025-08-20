@@ -4,9 +4,17 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/sounds/(.*)",
+      "dest": "/public/sounds/$1"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/server.js"
