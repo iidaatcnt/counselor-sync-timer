@@ -445,9 +445,9 @@
             }
 
             // NaNチェック - 入力フィールドから現在の設定を取得
-            if (!displayTime || isNaN(displayTime) || displayTime < 0) {
-                const minutes = parseInt(minutesInput.value) || 5;
-                const seconds = parseInt(secondsInput.value) || 0;
+            if (isNaN(displayTime) || displayTime < 0) {
+                const minutes = isNaN(parseInt(minutesInput.value)) ? 5 : parseInt(minutesInput.value);
+                const seconds = isNaN(parseInt(secondsInput.value)) ? 0 : parseInt(secondsInput.value);
                 displayTime = (minutes * 60 + seconds) * 1000;
             }
 
