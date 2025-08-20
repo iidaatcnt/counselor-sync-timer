@@ -441,7 +441,12 @@
                 // 音声ガイドのトリガー
                 checkAndPlaySound(elapsed);
             } else {
-                displayTime = timerState.remainingTime || timerState.totalDuration;
+                // 停止中またはポーズ中は残り時間を表示、なければ総時間を表示
+                if (timerState.remainingTime !== undefined && timerState.remainingTime !== null) {
+                    displayTime = timerState.remainingTime;
+                } else {
+                    displayTime = timerState.totalDuration;
+                }
             }
 
             // NaNチェック - 入力フィールドから現在の設定を取得
@@ -457,7 +462,9 @@
 
             // NaNチェック
             if (isNaN(minutes) || isNaN(seconds)) {
-                timerDisplay.textContent = '05:00';
+                const inputMinutes = parseInt(minutesInput.value) || 0;
+                const inputSeconds = parseInt(secondsInput.value) || 0;
+                timerDisplay.textContent = `${String(inputMinutes).padStart(2, '0')}:${String(inputSeconds).padStart(2, '0')}`;
                 return;
             }
 
