@@ -419,6 +419,7 @@
         let soundEnabled = true;
         let soundsPlayed = new Set();
         let audioPermissionGranted = false;
+        let lastKnownSessionStartTime = null;
 
         // 音声ファイルのプリロード
         const sounds = {
@@ -460,6 +461,31 @@
             soundEnabled = e.target.checked;
             soundStatusText.textContent = soundEnabled ? 'ON' : 'OFF';
         });
+
+        // セッション管理関数
+        function saveSessionStartTime(startTime) {
+            localStorage.setItem('counselor_session_start_time', startTime.toString());
+            lastKnownSessionStartTime = startTime;
+        }
+
+        function getLastSessionStartTime() {
+            const saved = localStorage.getItem('counselor_session_start_time');
+            return saved ? parseInt(saved) : null;
+        }
+
+        function clearSessionStartTime() {
+            localStorage.removeItem('counselor_session_start_time');
+            lastKnownSessionStartTime = null;
+        }
+
+        function isExistingSession(serverStartTime) {
+            const savedStartTime = getLastSessionStartTime();
+            if (!savedStartTime || !serverStartTime) return false;
+            
+            // 開始時刻が同じ、または5秒以内の差であれば同じセッション
+            const timeDiff = Math.abs(serverStartTime - savedStartTime);
+            return timeDiff < 5000;
+        }
 
         // タイマー表示の更新
         function updateDisplay() {
@@ -756,26 +782,47 @@
                 
                 console.log('更新後のタイマー状態:', timerState); // デバッグ用
                 
-                // 音声再生済みリストをクリア（新しいセッション）
+                // セッション状態の管理
                 if (!timerState.isRunning) {
+                    // タイマーが停止した場合
                     soundsPlayed.clear();
+                    clearSessionStartTime();
                 } else if (!wasRunning && timerState.isRunning) {
-                    // タイマーが新たに開始された場合
-                    console.log('新しいセッションが開始されました');
-                    soundsPlayed.clear();
+                    // タイマーが開始された場合
+                    const isExisting = isExistingSession(timerState.startTime);
+                    console.log('タイマー開始検出:', {
+                        isExistingSession: isExisting,
+                        serverStartTime: timerState.startTime,
+                        savedStartTime: getLastSessionStartTime()
+                    });
                     
-                    // 音声許可が得られていない場合はポップアップを表示
-                    if (!audioPermissionGranted) {
-                        console.log('音声許可未取得のためポップアップを表示');
-                        showNotificationPopup();
+                    if (isExisting) {
+                        // 既存セッション（リロード等）
+                        console.log('既存セッションを継続');
+                        // 経過時間に基づいて適切な音声再生状態を復元
+                        const elapsed = Date.now() - timerState.startTime;
+                        if (elapsed > 10000) {
+                            soundsPlayed.add('start'); // 開始音はすでに再生済み
+                        }
                     } else {
-                        // 音声許可済みの場合は通常の開始音再生
-                        if (soundEnabled) {
-                            console.log('同期による開始音を再生');
-                            setTimeout(() => {
-                                playSound('start');
-                                soundsPlayed.add('start');
-                            }, 100);
+                        // 新しいセッション
+                        console.log('新しいセッションが開始されました');
+                        soundsPlayed.clear();
+                        saveSessionStartTime(timerState.startTime);
+                        
+                        // 音声許可が得られていない場合はポップアップを表示
+                        if (!audioPermissionGranted) {
+                            console.log('音声許可未取得のためポップアップを表示');
+                            showNotificationPopup();
+                        } else {
+                            // 音声許可済みの場合は通常の開始音再生
+                            if (soundEnabled) {
+                                console.log('同期による開始音を再生');
+                                setTimeout(() => {
+                                    playSound('start');
+                                    soundsPlayed.add('start');
+                                }, 100);
+                            }
                         }
                     }
                 }
@@ -839,6 +886,12 @@
         function initialize() {
             // 初期表示（同期前）
             updateDisplay();
+            
+            // 保存されたセッション情報を復元
+            lastKnownSessionStartTime = getLastSessionStartTime();
+            if (lastKnownSessionStartTime) {
+                console.log('保存されたセッション開始時刻を復元:', new Date(lastKnownSessionStartTime));
+            }
             
             // 起動時に1回同期
             syncWithServer();
