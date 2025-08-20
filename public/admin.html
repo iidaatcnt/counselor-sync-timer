@@ -370,6 +370,7 @@
         const sounds = {
             start: new Audio('/sounds/counselor_start.wav'),
             min10: new Audio('/sounds/counselor_10min.wav'),
+            min15: new Audio('/sounds/counselor_15min.wav'),
             min17: new Audio('/sounds/counselor_17min.wav'),
             min18: new Audio('/sounds/counselor_18min.wav'),
             min19: new Audio('/sounds/counselor_19min.wav'),
@@ -474,28 +475,47 @@
         function checkAndPlaySound(elapsed) {
             if (!soundEnabled) return;
             
+            const totalMinutes = timerState.totalDuration / 60000;
+            const remainingTime = timerState.remainingTime;
+            const remainingMinutes = remainingTime / 60000;
             const elapsedMinutes = elapsed / 60000;
             
-            // 各タイミングで音声を再生（一度だけ）
-            if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
-                playSound('min10');
-                soundsPlayed.add('min10');
-            }
-            if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
-                playSound('min17');
-                soundsPlayed.add('min17');
-            }
-            if (elapsedMinutes >= 18 && elapsedMinutes < 18.1 && !soundsPlayed.has('min18')) {
-                playSound('min18');
-                soundsPlayed.add('min18');
-            }
-            if (elapsedMinutes >= 19 && elapsedMinutes < 19.1 && !soundsPlayed.has('min19')) {
-                playSound('min19');
-                soundsPlayed.add('min19');
-            }
-            if (elapsedMinutes >= 20 && elapsedMinutes < 20.1 && !soundsPlayed.has('end')) {
+            // 終了時（残り時間が0になった時）
+            if (remainingTime <= 0 && !soundsPlayed.has('end')) {
                 playSound('end');
                 soundsPlayed.add('end');
+                return;
+            }
+            
+            // 3分前（残り時間が3分を切った時）
+            if (remainingMinutes <= 3 && remainingMinutes > 2.9 && !soundsPlayed.has('3min_before')) {
+                // 15分音声を3分前の代用として使用
+                playSound('min15');
+                soundsPlayed.add('3min_before');
+            }
+            
+            // 固定タイミングでの音声再生（20分セッション用）
+            if (totalMinutes >= 20) {
+                // 10分経過時
+                if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
+                    playSound('min10');
+                    soundsPlayed.add('min10');
+                }
+                // 17分経過時（3分前）
+                if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
+                    playSound('min17');
+                    soundsPlayed.add('min17');
+                }
+                // 18分経過時（2分前）
+                if (elapsedMinutes >= 18 && elapsedMinutes < 18.1 && !soundsPlayed.has('min18')) {
+                    playSound('min18');
+                    soundsPlayed.add('min18');
+                }
+                // 19分経過時（1分前）
+                if (elapsedMinutes >= 19 && elapsedMinutes < 19.1 && !soundsPlayed.has('min19')) {
+                    playSound('min19');
+                    soundsPlayed.add('min19');
+                }
             }
         }
 

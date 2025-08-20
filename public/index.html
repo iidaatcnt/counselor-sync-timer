@@ -311,6 +311,7 @@
         const sounds = {
             start: new Audio('/sounds/counselor_start.wav'),
             min10: new Audio('/sounds/counselor_10min.wav'),
+            min15: new Audio('/sounds/counselor_15min.wav'),
             min17: new Audio('/sounds/counselor_17min.wav'),
             min18: new Audio('/sounds/counselor_18min.wav'),
             min19: new Audio('/sounds/counselor_19min.wav'),
@@ -457,31 +458,51 @@
 
         // 音声ガイドのチェックと再生
         function checkAndPlaySound(elapsed) {
-            if (!soundEnabled) return;
+            if (!soundEnabled || !timerState.totalDuration) return;
             
             const elapsedMinutes = elapsed / 60000;
+            const totalMinutes = timerState.totalDuration / 60000;
+            const remainingMinutes = (timerState.totalDuration - elapsed) / 60000;
+            const remainingSeconds = (timerState.totalDuration - elapsed) / 1000;
             
-            if (elapsed < 1000 && !soundsPlayed.has('start')) {
+            // 開始音（最初の5秒以内）- 同期遅延を考慮
+            if (elapsed < 5000 && !soundsPlayed.has('start')) {
+                console.log('開始音を再生します');
                 playSound('start');
                 soundsPlayed.add('start');
             }
-            if (elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
+            
+            // 中間地点音（10分以上のタイマーの場合）
+            if (totalMinutes >= 20 && elapsedMinutes >= 10 && elapsedMinutes < 10.1 && !soundsPlayed.has('min10')) {
+                console.log('10分経過音を再生します');
                 playSound('min10');
                 soundsPlayed.add('min10');
             }
-            if (elapsedMinutes >= 17 && elapsedMinutes < 17.1 && !soundsPlayed.has('min17')) {
-                playSound('min17');
-                soundsPlayed.add('min17');
+            
+            // 残り3分音（15分音声を使用）
+            if (remainingMinutes <= 3.1 && remainingMinutes > 2.9 && !soundsPlayed.has('3min_before')) {
+                console.log('残り3分音を再生します');
+                playSound('min15');
+                soundsPlayed.add('3min_before');
             }
-            if (elapsedMinutes >= 18 && elapsedMinutes < 18.1 && !soundsPlayed.has('min18')) {
+            
+            // 残り2分音
+            if (remainingMinutes <= 2.1 && remainingMinutes > 1.9 && !soundsPlayed.has('2min_before')) {
+                console.log('残り2分音を再生します');
                 playSound('min18');
-                soundsPlayed.add('min18');
+                soundsPlayed.add('2min_before');
             }
-            if (elapsedMinutes >= 19 && elapsedMinutes < 19.1 && !soundsPlayed.has('min19')) {
+            
+            // 残り1分音
+            if (remainingMinutes <= 1.1 && remainingMinutes > 0.9 && !soundsPlayed.has('1min_before')) {
+                console.log('残り1分音を再生します');
                 playSound('min19');
-                soundsPlayed.add('min19');
+                soundsPlayed.add('1min_before');
             }
-            if (elapsedMinutes >= 20 && elapsedMinutes < 20.1 && !soundsPlayed.has('end')) {
+            
+            // 終了音
+            if (remainingSeconds <= 1 && !soundsPlayed.has('end')) {
+                console.log('終了音を再生します');
                 playSound('end');
                 soundsPlayed.add('end');
             }
@@ -535,6 +556,7 @@
                 
                 // サーバーの状態でローカル状態を更新
                 const oldState = { ...timerState };
+                const wasRunning = oldState.isRunning;
                 
                 timerState.isRunning = data.isRunning || false;
                 timerState.isPaused = data.isPaused || false;
@@ -562,6 +584,18 @@
                 // 音声再生済みリストをクリア（新しいセッション）
                 if (!timerState.isRunning) {
                     soundsPlayed.clear();
+                } else if (!wasRunning && timerState.isRunning) {
+                    // タイマーが新たに開始された場合
+                    console.log('新しいセッションが開始されました');
+                    soundsPlayed.clear();
+                    // 開始音を再生（同期で検出された場合）
+                    if (soundEnabled) {
+                        console.log('同期による開始音を再生');
+                        setTimeout(() => {
+                            playSound('start');
+                            soundsPlayed.add('start');
+                        }, 100);
+                    }
                 }
 
                 // 接続状態の更新
