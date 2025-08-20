@@ -355,8 +355,8 @@
             isRunning: false,
             isPaused: false,
             startTime: null,
-            totalDuration: 5 * 60 * 1000, // デフォルト5分
-            remainingTime: 5 * 60 * 1000,
+            totalDuration: 0, // 初期化時に入力フィールドから設定
+            remainingTime: 0, // 初期化時に入力フィールドから設定
             pausedAt: null
         };
 
@@ -813,6 +813,22 @@
 
         // 初期化
         function initialize() {
+            // 入力フィールドの初期値でタイマー状態を設定
+            const initialMinutes = parseInt(minutesInput.value) || 0;
+            const initialSeconds = parseInt(secondsInput.value) || 0;
+            const initialDuration = (initialMinutes * 60 + initialSeconds) * 1000;
+            
+            // 初期値が0の場合は5分をデフォルトに
+            if (initialDuration === 0) {
+                minutesInput.value = 5;
+                secondsInput.value = 0;
+                timerState.totalDuration = 5 * 60 * 1000;
+                timerState.remainingTime = 5 * 60 * 1000;
+            } else {
+                timerState.totalDuration = initialDuration;
+                timerState.remainingTime = initialDuration;
+            }
+            
             // 初期状態を取得
             getInitialState();
             
