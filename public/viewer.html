@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer - 相談員画面</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            min-width: 600px;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .timer-display {
+            font-size: 8em;
+            font-weight: bold;
+            margin: 30px 0;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            letter-spacing: 0.05em;
+        }
+
+        .session-info {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .session-timer .info-value {
+            color: #FFD700;
+        }
+
+        .progress-bar {
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .status {
+            font-size: 1.5em;
+            margin: 30px 0;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .status.running {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status.paused {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        .status.stopped {
+            background: rgba(158, 158, 158, 0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+
+        .connection-status {
+            margin-top: 20px;
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .connection-status.connected {
+            color: #4CAF50;
+        }
+
+        .connection-status.disconnected {
+            color: #f44336;
+        }
+
+        .countdown-mode {
+            color: #FFD700;
+        }
+
+        .time-up {
+            animation: blink 1s infinite;
+            color: #ff6b6b;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .session-end-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: alertPulse 1s infinite;
+            display: none;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                min-width: 90vw;
+                padding: 20px;
+            }
+            
+            .timer-display {
+                font-size: 5em;
+            }
+            
+            .session-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SessionTimer - 相談員画面</h1>
+        
+        <div class="timer-display countdown-mode" id="timerDisplay">05:00</div>
+        
+        <div class="session-info">
+            <div class="info-box">
+                <div class="info-label">全体残り時間</div>
+                <div class="info-value" id="totalRemaining">02:00:00</div>
+            </div>
+            
+            <div class="info-box session-timer">
+                <div class="info-label">セッション残り時間</div>
+                <div class="info-value" id="sessionRemaining">20:00</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 75%;"></div>
+        </div>
+        
+        <div class="status stopped" id="statusDisplay">待機中</div>
+        
+        <div class="connection-status disconnected" id="connectionStatus">
+            ● 接続中...
+        </div>
+    </div>
+
+    <!-- セッション終了アラート -->
+    <div class="session-end-alert" id="sessionAlert">
+        🔔 セッション終了
+    </div>
+
+    <script>
+        // グローバル変数
+        let timerState = {
+            startTime: null,
+            totalDuration: 0,
+            sessionDuration: 0,
+            isPaused: false,
+            pausedAt: null,
+            pausedElapsed: 0,
+            sessionStartTime: null,
+            sessionPausedElapsed: 0,
+            isRunning: false,
+            remainingTotal: 0,
+            remainingSession: 0
+        };
+
+        let syncInterval = null;
+        let displayInterval = null;
+        let lastSyncTime = 0;
+
+        // 音声ファイルのプリロード
+        const sounds = {
+            min10: new Audio('/sounds/counselor_10min.wav'),
+            min15: new Audio('/sounds/counselor_15min.wav'),
+            min17: new Audio('/sounds/counselor_17min.wav'),
+            min18: new Audio('/sounds/counselor_18min.wav'),
+            min19: new Audio('/sounds/counselor_19min.wav'),
+            end: new Audio('/sounds/counselor_end.wav')
+        };
+
+        // 設定
+        const API_BASE_URL = window.location.origin;
+        const SYNC_INTERVAL = 10000; // 10秒ごとに同期
+        const DISPLAY_UPDATE_INTERVAL = 100; // 100msごとに表示更新
+
+        // DOM要素
+        const timerDisplay = document.getElementById('timerDisplay');
+        const totalRemainingDisplay = document.getElementById('totalRemaining');
+        const sessionRemainingDisplay = document.getElementById('sessionRemaining');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const progressFill = document.getElementById('progressFill');
+        const sessionAlert = document.getElementById('sessionAlert');
+
+        // 時間フォーマット
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function formatLongTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+
+        // タイマー表示の更新
+        function updateDisplay() {
+            const now = Date.now();
+            
+            if (timerState.isRunning && !timerState.isPaused && timerState.startTime) {
+                // 実行中の計算
+                const totalElapsed = (now - timerState.startTime) + timerState.pausedElapsed;
+                const sessionElapsed = (now - (timerState.sessionStartTime || timerState.startTime)) + timerState.sessionPausedElapsed;
+                
+                timerState.remainingTotal = Math.max(0, timerState.totalDuration - totalElapsed);
+                timerState.remainingSession = Math.max(0, timerState.sessionDuration - sessionElapsed);
+            }
+
+            // メイン表示
+            timerDisplay.textContent = formatTime(timerState.remainingSession || 0);
+            totalRemainingDisplay.textContent = formatLongTime(timerState.remainingTotal || 0);
+            sessionRemainingDisplay.textContent = formatTime(timerState.remainingSession || 0);
+
+            // プログレスバー
+            if (timerState.sessionDuration > 0) {
+                const sessionProgress = ((timerState.sessionDuration - (timerState.remainingSession || 0)) / timerState.sessionDuration) * 100;
+                progressFill.style.width = Math.min(100, Math.max(0, sessionProgress)) + '%';
+            }
+
+            // 状態表示
+            if (timerState.isRunning && !timerState.isPaused) {
+                statusDisplay.textContent = '実行中';
+                statusDisplay.className = 'status running';
+            } else if (timerState.isPaused) {
+                statusDisplay.textContent = '一時停止中';
+                statusDisplay.className = 'status paused';
+            } else {
+                statusDisplay.textContent = '待機中';
+                statusDisplay.className = 'status stopped';
+            }
+
+            // タイムアップの処理
+            if (timerState.remainingSession === 0 && timerState.isRunning) {
+                timerDisplay.classList.add('time-up');
+                showSessionEndAlert();
+            } else {
+                timerDisplay.classList.remove('time-up');
+                hideSessionEndAlert();
+            }
+        }
+
+        // セッション終了アラートの表示
+        function showSessionEndAlert() {
+            sessionAlert.style.display = 'block';
+            playSound('end');
+        }
+
+        // セッション終了アラートの非表示
+        function hideSessionEndAlert() {
+            sessionAlert.style.display = 'none';
+        }
+
+        // 音声再生
+        function playSound(soundKey) {
+            if (sounds[soundKey]) {
+                sounds[soundKey].play().catch(e => console.log('音声再生エラー:', e));
+            }
+        }
+
+        // サーバーから状態を取得
+        async function syncWithServer() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/timer`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                // サーバーの状態でローカル状態を更新
+                timerState = {
+                    startTime: data.startTime,
+                    totalDuration: data.totalDuration || 0,
+                    sessionDuration: data.sessionDuration || 0,
+                    isPaused: data.isPaused || false,
+                    pausedAt: data.pausedAt,
+                    pausedElapsed: data.pausedElapsed || 0,
+                    sessionStartTime: data.sessionStartTime,
+                    sessionPausedElapsed: data.sessionPausedElapsed || 0,
+                    isRunning: data.isRunning || false,
+                    remainingTotal: data.remainingTotal || 0,
+                    remainingSession: data.remainingSession || 0
+                };
+                
+                connectionStatus.textContent = '● 接続済み';
+                connectionStatus.className = 'connection-status connected';
+                lastSyncTime = Date.now();
+                
+            } catch (error) {
+                console.error('同期エラー:', error);
+                connectionStatus.textContent = '● 接続エラー';
+                connectionStatus.className = 'connection-status disconnected';
+            }
+        }
+
+        // 接続状態のチェック
+        function checkConnectionStatus() {
+            const timeSinceSync = Date.now() - lastSyncTime;
+            if (timeSinceSync > 5000) { // 5秒間同期できていない
+                connectionStatus.textContent = '● 接続不良';
+                connectionStatus.className = 'connection-status disconnected';
+            }
+        }
+
+        // 初期化
+        function initialize() {
+            // 初期同期
+            syncWithServer();
+            
+            // 定期同期
+            syncInterval = setInterval(syncWithServer, SYNC_INTERVAL);
+            
+            // 表示の定期更新
+            displayInterval = setInterval(() => {
+                updateDisplay();
+                checkConnectionStatus();
+            }, DISPLAY_UPDATE_INTERVAL);
+        }
+
+        // クリーンアップ
+        function cleanup() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+            }
+            if (displayInterval) {
+                clearInterval(displayInterval);
+            }
+        }
+
+        // ページ表示/非表示の処理
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                cleanup();
+            } else {
+                initialize();
+            }
+        });
+
+        // ページ離脱時のクリーンアップ
+        window.addEventListener('beforeunload', cleanup);
+
+        // 初期化実行
+        initialize();
+    </script>
+</body>
+</html>

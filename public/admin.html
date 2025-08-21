@@ -189,6 +189,44 @@
             color: white;
         }
 
+        .btn-next {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .session-info {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 2em;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .session-timer .info-value {
+            color: #FFD700;
+        }
+
         .sound-controls {
             margin: 20px 0;
             padding: 15px;
@@ -298,33 +336,42 @@
     <div class="container">
         <h1>SessionTimer 管理画面</h1>
         
-        <div class="timer-display" id="timerDisplay">05:00</div>
+        <div class="session-info">
+            <div class="info-box">
+                <div class="info-label">全体残り時間</div>
+                <div class="info-value" id="totalRemainingDisplay">02:00:00</div>
+            </div>
+            
+            <div class="info-box session-timer">
+                <div class="info-label">セッション残り時間</div>
+                <div class="info-value timer-display" id="timerDisplay">20:00</div>
+            </div>
+        </div>
         
         <div class="time-setting">
             <h3>⏰ 時間設定</h3>
             <div class="time-inputs">
                 <div class="time-input-group">
-                    <label for="minutesInput">分</label>
-                    <input type="number" id="minutesInput" min="0" max="60" value="5">
+                    <label for="totalMinutesInput">全体時間（分）</label>
+                    <input type="number" id="totalMinutesInput" min="1" max="480" value="120">
                 </div>
-                <span class="time-separator">:</span>
                 <div class="time-input-group">
-                    <label for="secondsInput">秒</label>
-                    <input type="number" id="secondsInput" min="0" max="59" value="0">
+                    <label for="sessionMinutesInput">セッション時間（分）</label>
+                    <input type="number" id="sessionMinutesInput" min="1" max="60" value="20">
                 </div>
             </div>
             <div class="quick-buttons">
-                <button class="quick-btn" onclick="setQuickTime(5)">5分</button>
-                <button class="quick-btn" onclick="setQuickTime(10)">10分</button>
-                <button class="quick-btn" onclick="setQuickTime(15)">15分</button>
-                <button class="quick-btn" onclick="setQuickTime(20)">20分</button>
-                <button class="quick-btn" onclick="setQuickTime(30)">30分</button>
+                <button class="quick-btn" onclick="setQuickTime(120, 20)">2時間/20分</button>
+                <button class="quick-btn" onclick="setQuickTime(90, 15)">1.5時間/15分</button>
+                <button class="quick-btn" onclick="setQuickTime(60, 10)">1時間/10分</button>
+                <button class="quick-btn" onclick="setQuickTime(30, 5)">30分/5分</button>
             </div>
         </div>
 
         <div class="controls">
             <button id="startBtn" class="btn-start">開始</button>
             <button id="pauseBtn" class="btn-pause" disabled>一時停止</button>
+            <button id="nextSessionBtn" class="btn-next" disabled>次のセッション</button>
             <button id="resetBtn" class="btn-reset">リセット</button>
         </div>
 
@@ -352,12 +399,18 @@
     <script>
         // グローバル変数
         let timerState = {
-            isRunning: false,
-            isPaused: false,
             startTime: null,
-            totalDuration: 0, // 初期化時に入力フィールドから設定
-            remainingTime: 0, // 初期化時に入力フィールドから設定
-            pausedAt: null
+            totalDuration: 120 * 60 * 1000, // デフォルト2時間
+            sessionDuration: 20 * 60 * 1000, // デフォルト20分
+            isPaused: false,
+            pausedAt: null,
+            pausedElapsed: 0,
+            sessionStartTime: null,
+            sessionPausedElapsed: 0,
+            isRunning: false,
+            remainingTotal: 120 * 60 * 1000,
+            remainingSession: 20 * 60 * 1000,
+            currentTime: null
         };
 
         let displayInterval = null;
@@ -381,18 +434,20 @@
         // 設定
         const API_BASE_URL = window.location.origin;
         const DISPLAY_UPDATE_INTERVAL = 100;
-        const SYNC_INTERVAL = 1000; // 1秒ごとに同期
+        const SYNC_INTERVAL = 10000; // 10秒ごとに同期
 
         // DOM要素
         const timerDisplay = document.getElementById('timerDisplay');
+        const totalRemainingDisplay = document.getElementById('totalRemainingDisplay');
         const connectionStatus = document.getElementById('connectionStatus');
         const lastUpdateDisplay = document.getElementById('lastUpdate');
         const apiCallsDisplay = document.getElementById('apiCalls');
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
+        const nextSessionBtn = document.getElementById('nextSessionBtn');
         const resetBtn = document.getElementById('resetBtn');
-        const minutesInput = document.getElementById('minutesInput');
-        const secondsInput = document.getElementById('secondsInput');
+        const totalMinutesInput = document.getElementById('totalMinutesInput');
+        const sessionMinutesInput = document.getElementById('sessionMinutesInput');
         const soundCheckbox = document.getElementById('soundEnabled');
         const soundStatusText = document.getElementById('soundStatus');
 
@@ -403,89 +458,88 @@
         });
 
         // 時間入力の変更イベント
-        minutesInput.addEventListener('change', updateTimerFromInputs);
-        secondsInput.addEventListener('change', updateTimerFromInputs);
+        totalMinutesInput.addEventListener('change', updateTimerFromInputs);
+        sessionMinutesInput.addEventListener('change', updateTimerFromInputs);
 
         // 入力値から時間を更新
         function updateTimerFromInputs() {
-            const minutes = Math.min(60, Math.max(0, parseInt(minutesInput.value) || 0));
-            const seconds = Math.min(59, Math.max(0, parseInt(secondsInput.value) || 0));
+            const totalMinutes = Math.min(480, Math.max(1, parseInt(totalMinutesInput.value) || 120));
+            const sessionMinutes = Math.min(60, Math.max(1, parseInt(sessionMinutesInput.value) || 20));
             
-            minutesInput.value = minutes;
-            secondsInput.value = seconds;
+            totalMinutesInput.value = totalMinutes;
+            sessionMinutesInput.value = sessionMinutes;
             
             if (!timerState.isRunning) {
-                timerState.totalDuration = (minutes * 60 + seconds) * 1000;
-                timerState.remainingTime = timerState.totalDuration;
-                console.log('時間設定を更新:', { minutes, seconds, totalDuration: timerState.totalDuration });
+                timerState.totalDuration = totalMinutes * 60 * 1000;
+                timerState.sessionDuration = sessionMinutes * 60 * 1000;
+                timerState.remainingTotal = timerState.totalDuration;
+                timerState.remainingSession = timerState.sessionDuration;
+                console.log('時間設定を更新:', { totalMinutes, sessionMinutes });
                 updateDisplay();
             }
         }
 
         // クイック時間設定
-        function setQuickTime(minutes) {
-            minutesInput.value = minutes;
-            secondsInput.value = 0;
+        function setQuickTime(totalMinutes, sessionMinutes) {
+            totalMinutesInput.value = totalMinutes;
+            sessionMinutesInput.value = sessionMinutes;
             updateTimerFromInputs();
+        }
+
+        // 時間フォーマット関数
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function formatLongTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
         }
 
         // タイマー表示の更新
         function updateDisplay() {
-            let displayTime;
+            const now = Date.now();
             
-            if (timerState.isRunning && !timerState.isPaused) {
-                const elapsed = Date.now() - timerState.startTime;
-                timerState.remainingTime = Math.max(0, timerState.totalDuration - elapsed);
-                displayTime = timerState.remainingTime;
+            if (timerState.isRunning && !timerState.isPaused && timerState.startTime) {
+                // 実行中の計算
+                const totalElapsed = (now - timerState.startTime) + timerState.pausedElapsed;
+                const sessionElapsed = (now - (timerState.sessionStartTime || timerState.startTime)) + timerState.sessionPausedElapsed;
+                
+                timerState.remainingTotal = Math.max(0, timerState.totalDuration - totalElapsed);
+                timerState.remainingSession = Math.max(0, timerState.sessionDuration - sessionElapsed);
                 
                 // 音声ガイドのトリガー
-                checkAndPlaySound(elapsed);
-            } else {
-                // 停止中またはポーズ中は残り時間を表示、なければ総時間を表示
-                if (timerState.remainingTime !== undefined && timerState.remainingTime !== null) {
-                    displayTime = timerState.remainingTime;
-                } else {
-                    displayTime = timerState.totalDuration;
-                }
+                checkAndPlaySound(sessionElapsed);
             }
 
-            // NaNチェック - 入力フィールドから現在の設定を取得
-            if (isNaN(displayTime) || displayTime < 0) {
-                const minutes = isNaN(parseInt(minutesInput.value)) ? 0 : parseInt(minutesInput.value);
-                const seconds = isNaN(parseInt(secondsInput.value)) ? 0 : parseInt(secondsInput.value);
-                displayTime = (minutes * 60 + seconds) * 1000;
-            }
+            // 表示の更新
+            timerDisplay.textContent = formatTime(timerState.remainingSession || 0);
+            totalRemainingDisplay.textContent = formatLongTime(timerState.remainingTotal || 0);
 
-            const totalSeconds = Math.ceil(displayTime / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-
-            // NaNチェック
-            if (isNaN(minutes) || isNaN(seconds)) {
-                const inputMinutes = parseInt(minutesInput.value) || 0;
-                const inputSeconds = parseInt(secondsInput.value) || 0;
-                timerDisplay.textContent = `${String(inputMinutes).padStart(2, '0')}:${String(inputSeconds).padStart(2, '0')}`;
-                return;
-            }
-
-            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            
             // タイムアップの処理
-            if (displayTime === 0 && timerState.isRunning) {
+            if (timerState.remainingSession === 0 && timerState.isRunning) {
                 timerDisplay.classList.add('time-up');
-                // タイマーを停止状態に
-                timerState.isRunning = false;
-                timerState.isPaused = false;
-                // 残り時間を初期設定値にリセット
-                const minutes = parseInt(minutesInput.value) || 0;
-                const seconds = parseInt(secondsInput.value) || 0;
-                timerState.remainingTime = (minutes * 60 + seconds) * 1000;
-                // ボタン状態を更新
-                updateButtonStates();
-                // サーバーに停止状態を送信
-                sendStateToServer('reset');
             } else {
                 timerDisplay.classList.remove('time-up');
+            }
+
+            if (timerState.remainingTotal === 0 && timerState.isRunning) {
+                // 全体タイマー終了
+                timerState.isRunning = false;
+                timerState.isPaused = false;
+                updateButtonStates();
+                sendStateToServer('reset');
             }
         }
 
@@ -561,22 +615,15 @@
             try {
                 // 送信するデータを整形
                 const requestData = {
-                    action: action,
-                    timestamp: Date.now()
+                    action: action
                 };
                 
                 // actionごとに必要なデータを追加
-                if (action === 'start' || action === 'reset') {
-                    requestData.state = {
-                        totalDuration: timerState.totalDuration,
-                        remainingTime: timerState.remainingTime
-                    };
-                } else if (action === 'pause') {
-                    // 一時停止時も現在の状態を送信
-                    requestData.state = {
-                        totalDuration: timerState.totalDuration,
-                        remainingTime: timerState.remainingTime
-                    };
+                if (action === 'reset' || action === 'setTime') {
+                    const totalMinutes = parseInt(totalMinutesInput.value) || 120;
+                    const sessionMinutes = parseInt(sessionMinutesInput.value) || 20;
+                    requestData.totalMinutes = totalMinutes;
+                    requestData.sessionMinutes = sessionMinutes;
                 }
                 
                 const response = await fetch(`${API_BASE_URL}/api/timer`, {
@@ -596,12 +643,7 @@
                 if (data.success) {
                     // サーバーの状態で更新
                     if (data.state) {
-                        timerState.isRunning = data.state.isRunning;
-                        timerState.isPaused = data.state.isPaused;
-                        timerState.startTime = data.state.startTime;
-                        timerState.totalDuration = data.state.totalDuration;
-                        timerState.remainingTime = data.state.remainingTime;
-                        timerState.pausedAt = data.state.pausedAt;
+                        timerState = { ...data.state };
                     }
                     
                     connectionStatus.textContent = '送信完了';
@@ -633,54 +675,36 @@
             if (timerState.isRunning && !timerState.isPaused) {
                 startBtn.disabled = true;
                 pauseBtn.disabled = false;
+                nextSessionBtn.disabled = false;
                 resetBtn.disabled = true;
-                minutesInput.disabled = true;
-                secondsInput.disabled = true;
+                totalMinutesInput.disabled = true;
+                sessionMinutesInput.disabled = true;
             } else if (timerState.isPaused) {
                 startBtn.disabled = false;
                 startBtn.textContent = '再開';
                 pauseBtn.disabled = true;
+                nextSessionBtn.disabled = true;
                 resetBtn.disabled = false;
-                minutesInput.disabled = true;
-                secondsInput.disabled = true;
+                totalMinutesInput.disabled = true;
+                sessionMinutesInput.disabled = true;
             } else {
                 startBtn.disabled = false;
                 startBtn.textContent = '開始';
                 pauseBtn.disabled = true;
+                nextSessionBtn.disabled = true;
                 resetBtn.disabled = false;
-                minutesInput.disabled = false;
-                secondsInput.disabled = false;
+                totalMinutesInput.disabled = false;
+                sessionMinutesInput.disabled = false;
             }
         }
 
         // タイマー開始
         async function startTimer() {
-            if (!timerState.isRunning) {
-                // 入力値を再取得して設定
-                const minutes = parseInt(minutesInput.value) || 0;
-                const seconds = parseInt(secondsInput.value) || 0;
-                const totalDuration = (minutes * 60 + seconds) * 1000;
-                
-                console.log('タイマー開始:', { minutes, seconds, totalDuration });
-                
-                // 新規開始
-                timerState.isRunning = true;
-                timerState.isPaused = false;
-                timerState.startTime = Date.now();
-                timerState.totalDuration = totalDuration;
-                timerState.remainingTime = totalDuration;
-                soundsPlayed.clear();
-                
-                // 開始音声
-                if (soundEnabled) {
-                    playSound('start');
-                }
-            } else if (timerState.isPaused) {
-                // 再開
-                const pauseDuration = Date.now() - timerState.pausedAt;
-                timerState.startTime += pauseDuration;
-                timerState.isPaused = false;
-                timerState.pausedAt = null;
+            soundsPlayed.clear();
+            
+            // 開始音声
+            if (soundEnabled) {
+                playSound('start');
             }
 
             // 即座にUI更新
@@ -690,8 +714,6 @@
             const result = await sendStateToServer('start');
             if (!result.success) {
                 // 失敗時は元に戻す
-                timerState.isRunning = false;
-                timerState.isPaused = false;
                 updateButtonStates();
                 updateDisplay();
             }
@@ -699,42 +721,33 @@
 
         // タイマー一時停止
         async function pauseTimer() {
-            if (timerState.isRunning && !timerState.isPaused) {
-                timerState.isPaused = true;
-                timerState.pausedAt = Date.now();
+            // 即座にUI更新
+            updateButtonStates();
+            updateDisplay();
 
-                // 即座にUI更新
+            const result = await sendStateToServer('pause');
+            if (!result.success) {
+                // 失敗時は元に戻す
                 updateButtonStates();
                 updateDisplay();
-
-                const result = await sendStateToServer('pause');
-                if (!result.success) {
-                    // 失敗時は元に戻す
-                    timerState.isPaused = false;
-                    timerState.pausedAt = null;
-                    updateButtonStates();
-                    updateDisplay();
-                }
             }
         }
 
-        // 停止機能を削除 - リセットで代用
+        // 次のセッション
+        async function nextSession() {
+            // 即座にUI更新
+            soundsPlayed.clear();
+            
+            const result = await sendStateToServer('nextSession');
+            if (!result.success) {
+                // 失敗時は元に戻す
+                updateButtonStates();
+                updateDisplay();
+            }
+        }
 
         // タイマーリセット
         async function resetTimer() {
-            const oldState = { ...timerState };
-            
-            // 入力値を再取得して設定
-            const minutes = parseInt(minutesInput.value) || 0;
-            const seconds = parseInt(secondsInput.value) || 0;
-            const totalDuration = (minutes * 60 + seconds) * 1000;
-            
-            console.log('タイマーリセット:', { minutes, seconds, totalDuration });
-            
-            timerState.isRunning = false;
-            timerState.isPaused = false;
-            timerState.totalDuration = totalDuration;
-            timerState.remainingTime = totalDuration;
             soundsPlayed.clear();
 
             // 即座にUI更新
@@ -744,7 +757,6 @@
             const result = await sendStateToServer('reset');
             if (!result.success) {
                 // 失敗時は元に戻す
-                timerState = oldState;
                 updateButtonStates();
                 updateDisplay();
             }
@@ -753,6 +765,7 @@
         // イベントリスナー
         startBtn.addEventListener('click', startTimer);
         pauseBtn.addEventListener('click', pauseTimer);
+        nextSessionBtn.addEventListener('click', nextSession);
         resetBtn.addEventListener('click', resetTimer);
 
         // 初期状態を取得
@@ -773,28 +786,17 @@
                 console.log('初期状態:', data); // デバッグ用
                 
                 // サーバーの状態でローカル状態を更新
-                timerState.isRunning = data.isRunning || false;
-                timerState.isPaused = data.isPaused || false;
-                timerState.startTime = data.startTime || null;
+                timerState = { ...data };
                 
-                // タイマーが実行中または一時停止中の場合のみサーバーの時間設定を適用
-                if ((data.isRunning || data.isPaused) && data.totalDuration !== undefined && data.totalDuration > 0) {
-                    timerState.totalDuration = data.totalDuration;
-                    timerState.remainingTime = data.remainingTime || data.totalDuration;
-                    
-                    // 時間入力フィールドを更新
-                    const totalSeconds = Math.floor(timerState.totalDuration / 1000);
-                    minutesInput.value = Math.floor(totalSeconds / 60);
-                    secondsInput.value = totalSeconds % 60;
-                } else {
-                    // タイマーが停止中の場合は現在の入力値を保持
-                    const minutes = parseInt(minutesInput.value) || 5;
-                    const seconds = parseInt(secondsInput.value) || 0;
-                    timerState.totalDuration = (minutes * 60 + seconds) * 1000;
-                    timerState.remainingTime = timerState.totalDuration;
+                // 時間入力フィールドを更新
+                if (timerState.totalDuration > 0) {
+                    const totalMinutes = Math.floor(timerState.totalDuration / (60 * 1000));
+                    totalMinutesInput.value = totalMinutes;
                 }
-                
-                timerState.pausedAt = data.pausedAt || null;
+                if (timerState.sessionDuration > 0) {
+                    const sessionMinutes = Math.floor(timerState.sessionDuration / (60 * 1000));
+                    sessionMinutesInput.value = sessionMinutes;
+                }
                 
                 connectionStatus.textContent = '待機中';
                 connectionStatus.className = 'status';
@@ -813,22 +815,6 @@
 
         // 初期化
         function initialize() {
-            // 入力フィールドの初期値でタイマー状態を設定
-            const initialMinutes = parseInt(minutesInput.value) || 0;
-            const initialSeconds = parseInt(secondsInput.value) || 0;
-            const initialDuration = (initialMinutes * 60 + initialSeconds) * 1000;
-            
-            // 初期値が0の場合は5分をデフォルトに
-            if (initialDuration === 0) {
-                minutesInput.value = 5;
-                secondsInput.value = 0;
-                timerState.totalDuration = 5 * 60 * 1000;
-                timerState.remainingTime = 5 * 60 * 1000;
-            } else {
-                timerState.totalDuration = initialDuration;
-                timerState.remainingTime = initialDuration;
-            }
-            
             // 初期状態を取得
             getInitialState();
             
