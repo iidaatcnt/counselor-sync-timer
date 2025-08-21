@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer - 相談員画面 - GitHub同期版</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            min-width: 600px;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .github-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #24292e 0%, #586069 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .setup-panel {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 0, 0.1);
+            border: 2px solid rgba(255, 255, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .setup-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        .setup-input {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .setup-input label {
+            min-width: 120px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .setup-input input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .setup-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-setup {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .timer-display {
+            font-size: 8em;
+            font-weight: bold;
+            margin: 30px 0;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            letter-spacing: 0.05em;
+            color: #FFD700;
+        }
+
+        .session-info {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .status {
+            font-size: 1.5em;
+            margin: 30px 0;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .status.running {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status.paused {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .github-stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(36, 41, 46, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .github-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-weight: bold;
+        }
+
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .sync-indicator.good {
+            background: #4CAF50;
+        }
+
+        .sync-indicator.warning {
+            background: #FF9800;
+        }
+
+        .sync-indicator.error {
+            background: #f44336;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #ffcccc;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .time-up {
+            animation: blink 1s infinite;
+            color: #ff6b6b;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .session-end-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: alertPulse 1s infinite;
+            display: none;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SessionTimer - 相談員画面</h1>
+        <div class="github-badge">🚀 GitHub Pages 同期版</div>
+        
+        <!-- セットアップパネル -->
+        <div class="setup-panel" id="setupPanel">
+            <div class="setup-title">🔧 接続設定</div>
+            <div class="setup-input">
+                <label>GitHub Username:</label>
+                <input type="text" id="githubOwner" placeholder="your-username">
+            </div>
+            <div class="setup-input">
+                <label>Repository名:</label>
+                <input type="text" id="githubRepo" placeholder="timer-state">
+            </div>
+            <button class="btn-setup" onclick="setupGitHub()">接続</button>
+            <div class="error-message" id="setupError"></div>
+        </div>
+        
+        <!-- メインUI -->
+        <div id="mainUI" class="hidden">
+            <div class="timer-display" id="timerDisplay">20:00</div>
+            
+            <div class="session-info">
+                <div class="info-box">
+                    <div class="info-label">全体残り時間</div>
+                    <div class="info-value" id="totalRemainingDisplay">02:00:00</div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-label">セッション残り時間</div>
+                    <div class="info-value" id="sessionRemainingDisplay">20:00</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            
+            <div class="status" id="statusDisplay">待機中</div>
+            
+            <div class="github-stats">
+                <div class="github-title">📡 GitHub同期状況</div>
+                <div class="stat-row">
+                    <span>Repository:</span>
+                    <span class="stat-value" id="repoInfo">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>状態バージョン:</span>
+                    <span class="stat-value" id="stateVersion">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>最終更新:</span>
+                    <span class="stat-value" id="lastUpdateTime">-<span class="sync-indicator good" id="syncIndicator"></span></span>
+                </div>
+                <div class="stat-row">
+                    <span>同期間隔:</span>
+                    <span class="stat-value">10秒 ⚡</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- セッション終了アラート -->
+    <div class="session-end-alert" id="sessionAlert">
+        🔔 セッション終了
+    </div>
+
+    <script src="/github-sync-client.js"></script>
+    <script>
+        let githubClient = null;
+        
+        // ローカルストレージから設定を読み込み
+        function loadSettings() {
+            const settings = localStorage.getItem('github-timer-viewer-settings');
+            if (settings) {
+                const config = JSON.parse(settings);
+                document.getElementById('githubOwner').value = config.owner || '';
+                document.getElementById('githubRepo').value = config.repo || '';
+                
+                if (config.owner && config.repo) {
+                    setupGitHub();
+                }
+            }
+        }
+        
+        // GitHub設定
+        async function setupGitHub() {
+            const owner = document.getElementById('githubOwner').value.trim();
+            const repo = document.getElementById('githubRepo').value.trim();
+            
+            const errorDiv = document.getElementById('setupError');
+            errorDiv.style.display = 'none';
+            
+            if (!owner || !repo) {
+                showError('GitHub UsernameとRepository名を入力してください');
+                return;
+            }
+            
+            try {
+                // GitHub Pages接続テスト
+                const testUrl = `https://${owner}.github.io/${repo}/timer-state.json?_t=${Date.now()}`;
+                const testResponse = await fetch(testUrl);
+                
+                if (!testResponse.ok && testResponse.status !== 404) {
+                    throw new Error(`GitHub Pagesに接続できません (${testResponse.status})`);
+                }
+                
+                // 設定を保存
+                const config = { owner, repo };
+                localStorage.setItem('github-timer-viewer-settings', JSON.stringify(config));
+                
+                // GitHubクライアントを初期化（読み取り専用）
+                githubClient = new GitHubSyncClient({
+                    owner: owner,
+                    repo: repo,
+                    githubToken: null, // 相談員は読み取り専用
+                    isAdmin: false,
+                    pollInterval: 10000 // 10秒間隔
+                });
+                
+                // 状態変更リスナーを登録
+                githubClient.addListener((newState, oldState) => {
+                    updateDisplay();
+                    updateStats();
+                    
+                    // セッション終了の検出
+                    if (newState.isRunning && newState.remainingSession === 0) {
+                        showSessionEndAlert();
+                    }
+                });
+                
+                // UIを切り替え
+                document.getElementById('setupPanel').style.display = 'none';
+                document.getElementById('mainUI').classList.remove('hidden');
+                
+                // 初期表示
+                updateDisplay();
+                updateStats();
+                
+                console.log('GitHub同期クライアント初期化完了（読み取り専用）');
+                
+            } catch (error) {
+                console.error('GitHub設定エラー:', error);
+                showError(error.message);
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('setupError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function updateDisplay() {
+            if (!githubClient) return;
+            
+            const state = githubClient.getCurrentState();
+            
+            // メイン表示
+            document.getElementById('timerDisplay').textContent = formatTime(state.remainingSession || 0);
+            document.getElementById('totalRemainingDisplay').textContent = formatLongTime(state.remainingTotal || 0);
+            document.getElementById('sessionRemainingDisplay').textContent = formatTime(state.remainingSession || 0);
+
+            // プログレスバー
+            if (state.sessionDuration > 0) {
+                const sessionProgress = ((state.sessionDuration - (state.remainingSession || 0)) / state.sessionDuration) * 100;
+                document.getElementById('progressFill').style.width = Math.min(100, Math.max(0, sessionProgress)) + '%';
+            }
+
+            // 状態表示
+            if (state.isRunning && !state.isPaused) {
+                document.getElementById('statusDisplay').textContent = '実行中';
+                document.getElementById('statusDisplay').className = 'status running';
+            } else if (state.isPaused) {
+                document.getElementById('statusDisplay').textContent = '一時停止中';
+                document.getElementById('statusDisplay').className = 'status paused';
+            } else {
+                document.getElementById('statusDisplay').textContent = '待機中';
+                document.getElementById('statusDisplay').className = 'status';
+            }
+
+            // タイムアップの処理
+            const timerDisplay = document.getElementById('timerDisplay');
+            if (state.remainingSession === 0 && state.isRunning) {
+                timerDisplay.classList.add('time-up');
+            } else {
+                timerDisplay.classList.remove('time-up');
+                hideSessionEndAlert();
+            }
+        }
+        
+        function showSessionEndAlert() {
+            document.getElementById('sessionAlert').style.display = 'block';
+            playSound();
+        }
+        
+        function hideSessionEndAlert() {
+            document.getElementById('sessionAlert').style.display = 'none';
+        }
+        
+        function playSound() {
+            // セッション終了音の再生
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            } catch (error) {
+                console.log('音声再生エラー:', error);
+            }
+        }
+        
+        function updateStats() {
+            if (!githubClient) return;
+            
+            const stats = githubClient.getStats();
+            
+            document.getElementById('repoInfo').textContent = `${githubClient.config.owner}/${githubClient.config.repo}`;
+            document.getElementById('stateVersion').textContent = `v${stats.version}`;
+            
+            if (stats.lastUpdate) {
+                const date = new Date(stats.lastUpdate);
+                document.getElementById('lastUpdateTime').textContent = date.toLocaleTimeString('ja-JP');
+                
+                const secondsAgo = Math.floor((Date.now() - stats.lastUpdate) / 1000);
+                const indicator = document.getElementById('syncIndicator');
+                
+                if (secondsAgo < 30) {
+                    indicator.className = 'sync-indicator good';
+                } else if (secondsAgo < 120) {
+                    indicator.className = 'sync-indicator warning';
+                } else {
+                    indicator.className = 'sync-indicator error';
+                }
+            }
+        }
+        
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        function formatLongTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+        
+        // リアルタイム表示更新
+        setInterval(() => {
+            if (githubClient) {
+                updateDisplay();
+            }
+        }, 1000);
+        
+        // 統計更新
+        setInterval(() => {
+            if (githubClient) {
+                updateStats();
+            }
+        }, 5000);
+        
+        // 初期化
+        loadSettings();
+    </script>
+</body>
+</html>
