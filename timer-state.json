@@ -1,5 +1,5 @@
 {
-  "lastUpdate": 1755737533983,
+  "lastUpdate": 1755737535751,
   "startTime": 1755736160018,
   "totalDuration": 7200000,
   "sessionDuration": 1200000,
@@ -11,5 +11,5 @@
   "isRunning": true,
   "action": "initialize",
   "actionBy": "admin",
-  "version": 567
+  "version": 568
 }
