@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SessionTimer - リアルタイムタイマー</title>
+    <title>SessionTimer - 管理画面へのリンク</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         * {
             margin: 0;
@@ -12,579 +13,122 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            color: white;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 100%;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            min-width: 600px;
+            max-width: 800px;
         }
 
         h1 {
-            text-align: center;
-            color: #333;
+            font-size: 2.5em;
             margin-bottom: 30px;
-            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
-        .timer-section {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .timer-label {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .timer-display {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #333;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
-        }
-
-        .timer-display.warning {
-            color: #ff6b6b;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .github-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #24292e 0%, #586069 100%);
             color: white;
-        }
-
-        .btn-pause {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            color: white;
-        }
-
-        .btn-reset {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            color: white;
-        }
-
-        .btn-next {
-            background: linear-gradient(135deg, #43e97b, #38f9d7);
-            color: white;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .status {
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        .status.running {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status.paused {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .admin-panel {
-            margin-top: 30px;
-            padding: 20px;
-            background: #e9ecef;
-            border-radius: 15px;
-        }
-
-        .admin-panel h3 {
-            margin-bottom: 15px;
-            color: #495057;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        .input-group label {
-            flex: 1;
-            color: #666;
-        }
-
-        .input-group input {
-            flex: 2;
-            padding: 8px 12px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .toggle-btn {
-            background: #6c757d;
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-        }
-
-        .toggle-btn:hover {
-            background: #5a6268;
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
+            padding: 5px 15px;
             border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 0.8em;
+            margin-bottom: 20px;
+            font-weight: bold;
         }
 
-        .connection-status.connected {
-            background: #d4edda;
-            color: #155724;
+
+        .links-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+            width: 100%;
         }
 
-        .connection-status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
+        .link-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: blink 2s infinite;
+        .link-box h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
         }
 
-        .status-dot.connected {
-            background: #28a745;
+        .link-box p {
+            opacity: 0.8;
+            margin-bottom: 20px;
         }
 
-        .status-dot.disconnected {
-            background: #dc3545;
+        .nav-button {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .admin-button {
+            background: linear-gradient(135deg, #FF5722 0%, #D32F2F 100%);
+            color: white;
         }
 
-        @media (max-width: 480px) {
-            .timer-display {
-                font-size: 2rem;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .btn {
-                padding: 10px 20px;
-                font-size: 0.9rem;
-            }
+        .admin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4);
+        }
+
+        .viewer-button {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .viewer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">
-        <span class="status-dot"></span>
-        <span id="connectionText">ローカルモード</span>
-    </div>
-
     <div class="container">
         <h1>SessionTimer</h1>
+        <div class="github-badge">🚀 GitHub Pages 同期版</div>
         
-        <div class="timer-section">
-            <div class="timer-label">全体タイマー</div>
-            <div class="timer-display" id="totalTimer">02:00:00</div>
-        </div>
-        
-        <div class="timer-section">
-            <div class="timer-label">セッションタイマー</div>
-            <div class="timer-display" id="sessionTimer">20:00</div>
-        </div>
-        
-        <div class="controls">
-            <button class="btn btn-start" id="startBtn">開始</button>
-            <button class="btn btn-pause" id="pauseBtn" style="display: none;">一時停止</button>
-            <button class="btn btn-reset" id="resetBtn">リセット</button>
-            <button class="btn btn-next" id="nextBtn">次のセッション</button>
-        </div>
-        
-        <div class="status paused" id="status">
-            ステータス: 停止中
-        </div>
-        
-        <button class="toggle-btn" id="toggleAdmin">管理者パネルを表示</button>
-        
-        <div class="admin-panel" id="adminPanel" style="display: none;">
-            <h3>管理者設定</h3>
-            <div class="input-group">
-                <label>全体時間（分）:</label>
-                <input type="number" id="totalMinutes" value="120" min="1" max="999">
+        <div class="links-container">
+            <div class="link-box">
+                <h2>👨‍💼 管理者用</h2>
+                <p>タイマーの操作・設定</p>
+                <a href="admin.html" class="nav-button admin-button">管理画面</a>
             </div>
-            <div class="input-group">
-                <label>セッション時間（分）:</label>
-                <input type="number" id="sessionMinutes" value="20" min="1" max="60">
+            
+            <div class="link-box">
+                <h2>👥 相談員用</h2>
+                <p>タイマーの表示・確認</p>
+                <a href="viewer.html" class="nav-button viewer-button">相談員画面</a>
             </div>
-            <button class="btn btn-reset" onclick="applySettings()">設定を適用</button>
         </div>
     </div>
 
-    <script>
-        // タイマーの状態管理
-        let timerState = {
-            totalTime: 7200,     // 02:00:00 in seconds
-            sessionTime: 1200,   // 20:00 in seconds
-            isPaused: true,
-            lastUpdate: Date.now()
-        };
-
-        let timerInterval = null;
-        let syncInterval = null;
-
-        // ローカルストレージキー
-        const STORAGE_KEY = 'sessionTimerState';
-        const SYNC_KEY = 'sessionTimerSync';
-
-        // DOM要素
-        const totalTimerEl = document.getElementById('totalTimer');
-        const sessionTimerEl = document.getElementById('sessionTimer');
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const statusEl = document.getElementById('status');
-        const adminPanel = document.getElementById('adminPanel');
-        const toggleAdminBtn = document.getElementById('toggleAdmin');
-
-        // 時間フォーマット関数
-        function formatTime(seconds) {
-            if (seconds < 0) seconds = 0;
-            
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = Math.floor(seconds % 60);
-            
-            if (hours > 0) {
-                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-            } else {
-                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-            }
-        }
-
-        // タイマー表示更新
-        function updateDisplay() {
-            totalTimerEl.textContent = formatTime(timerState.totalTime);
-            sessionTimerEl.textContent = formatTime(timerState.sessionTime);
-            
-            // 警告表示
-            if (timerState.sessionTime <= 60 && timerState.sessionTime > 0) {
-                sessionTimerEl.classList.add('warning');
-            } else {
-                sessionTimerEl.classList.remove('warning');
-            }
-            
-            if (timerState.totalTime <= 300 && timerState.totalTime > 0) {
-                totalTimerEl.classList.add('warning');
-            } else {
-                totalTimerEl.classList.remove('warning');
-            }
-            
-            // ステータス更新
-            if (timerState.isPaused) {
-                statusEl.textContent = 'ステータス: 停止中';
-                statusEl.className = 'status paused';
-            } else {
-                statusEl.textContent = 'ステータス: 実行中';
-                statusEl.className = 'status running';
-            }
-        }
-
-        // タイマーのtick処理
-        function tick() {
-            if (!timerState.isPaused) {
-                const now = Date.now();
-                const elapsed = Math.floor((now - timerState.lastUpdate) / 1000);
-                
-                if (elapsed >= 1) {
-                    // 全体タイマーを減算
-                    if (timerState.totalTime > 0) {
-                        timerState.totalTime = Math.max(0, timerState.totalTime - elapsed);
-                    }
-                    
-                    // セッションタイマーを減算
-                    if (timerState.sessionTime > 0) {
-                        timerState.sessionTime = Math.max(0, timerState.sessionTime - elapsed);
-                    }
-                    
-                    timerState.lastUpdate = now;
-                    
-                    // セッションタイマーが0になったら
-                    if (timerState.sessionTime === 0) {
-                        playSound();
-                        alert('セッション終了！');
-                        pauseTimer();
-                    }
-                    
-                    // 全体タイマーが0になったら
-                    if (timerState.totalTime === 0 && timerState.sessionTime === 0) {
-                        playSound();
-                        alert('全体タイマー終了！');
-                        pauseTimer();
-                    }
-                    
-                    updateDisplay();
-                    saveState();
-                    broadcastState();
-                }
-            }
-        }
-
-        // 音を鳴らす（ブラウザ対応）
-        function playSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            gainNode.gain.value = 0.3;
-            
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.5);
-        }
-
-        // タイマー開始
-        function startTimer() {
-            timerState.isPaused = false;
-            timerState.lastUpdate = Date.now();
-            startBtn.style.display = 'none';
-            pauseBtn.style.display = 'inline-block';
-            
-            if (!timerInterval) {
-                timerInterval = setInterval(tick, 100); // 100msごとに更新
-            }
-            
-            updateDisplay();
-            saveState();
-            broadcastState();
-        }
-
-        // タイマー一時停止
-        function pauseTimer() {
-            timerState.isPaused = true;
-            startBtn.style.display = 'inline-block';
-            pauseBtn.style.display = 'none';
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            
-            updateDisplay();
-            saveState();
-            broadcastState();
-        }
-
-        // タイマーリセット
-        function resetTimer() {
-            const totalMinutes = parseInt(document.getElementById('totalMinutes').value) || 120;
-            const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value) || 20;
-            
-            timerState.totalTime = totalMinutes * 60;
-            timerState.sessionTime = sessionMinutes * 60;
-            timerState.isPaused = true;
-            timerState.lastUpdate = Date.now();
-            
-            pauseTimer();
-            updateDisplay();
-            saveState();
-            broadcastState();
-        }
-
-        // 次のセッション
-        function nextSession() {
-            const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value) || 20;
-            timerState.sessionTime = sessionMinutes * 60;
-            timerState.lastUpdate = Date.now();
-            
-            updateDisplay();
-            saveState();
-            broadcastState();
-        }
-
-        // 設定適用
-        function applySettings() {
-            resetTimer();
-            alert('設定を適用しました');
-        }
-
-        // 状態の保存
-        function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(timerState));
-        }
-
-        // 状態の読み込み
-        function loadState() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const state = JSON.parse(saved);
-                    // 経過時間を計算して反映
-                    if (!state.isPaused) {
-                        const now = Date.now();
-                        const elapsed = Math.floor((now - state.lastUpdate) / 1000);
-                        state.totalTime = Math.max(0, state.totalTime - elapsed);
-                        state.sessionTime = Math.max(0, state.sessionTime - elapsed);
-                        state.lastUpdate = now;
-                    }
-                    timerState = state;
-                    
-                    if (!timerState.isPaused) {
-                        startBtn.style.display = 'none';
-                        pauseBtn.style.display = 'inline-block';
-                        if (!timerInterval) {
-                            timerInterval = setInterval(tick, 100);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Failed to load state:', e);
-                }
-            }
-        }
-
-        // 他のタブとの同期
-        function broadcastState() {
-            localStorage.setItem(SYNC_KEY, JSON.stringify({
-                ...timerState,
-                timestamp: Date.now()
-            }));
-        }
-
-        // 同期イベントのリスナー
-        window.addEventListener('storage', (e) => {
-            if (e.key === SYNC_KEY && e.newValue) {
-                try {
-                    const syncState = JSON.parse(e.newValue);
-                    // より新しい状態を採用
-                    if (syncState.timestamp > timerState.lastUpdate) {
-                        timerState = {
-                            totalTime: syncState.totalTime,
-                            sessionTime: syncState.sessionTime,
-                            isPaused: syncState.isPaused,
-                            lastUpdate: syncState.lastUpdate
-                        };
-                        
-                        if (!timerState.isPaused && !timerInterval) {
-                            startTimer();
-                        } else if (timerState.isPaused && timerInterval) {
-                            pauseTimer();
-                        }
-                        
-                        updateDisplay();
-                    }
-                } catch (e) {
-                    console.error('Sync error:', e);
-                }
-            }
-        });
-
-        // イベントリスナー
-        startBtn.addEventListener('click', startTimer);
-        pauseBtn.addEventListener('click', pauseTimer);
-        resetBtn.addEventListener('click', resetTimer);
-        nextBtn.addEventListener('click', nextSession);
-        toggleAdminBtn.addEventListener('click', () => {
-            const isVisible = adminPanel.style.display !== 'none';
-            adminPanel.style.display = isVisible ? 'none' : 'block';
-            toggleAdminBtn.textContent = isVisible ? '管理者パネルを表示' : '管理者パネルを隠す';
-        });
-
-        // 初期化
-        loadState();
-        updateDisplay();
-
-        // ページ離脱時の処理
-        window.addEventListener('beforeunload', () => {
-            saveState();
-        });
-
-        // 定期的な同期（フォーカスがある場合のみ）
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                loadState();
-                updateDisplay();
-            }
-        });
-    </script>
 </body>
 </html>
