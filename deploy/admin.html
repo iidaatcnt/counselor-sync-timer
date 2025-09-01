@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SessionTimer 管理画面</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #FF5722 0%, #D32F2F 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            min-width: 600px;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .github-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #24292e 0%, #586069 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .setup-panel {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 0, 0.1);
+            border: 2px solid rgba(255, 255, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .setup-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        .setup-input {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .setup-input label {
+            min-width: 120px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .setup-input input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .setup-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-setup {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .session-info {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 2em;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .session-timer .info-value {
+            color: #FFD700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .sound-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sound-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sound-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(31, 38, 135, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #9E9E9E 0%, #616161 100%);
+            color: white;
+        }
+
+        .time-setting {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .time-inputs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .time-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-input-group label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        input[type="number"] {
+            width: 100px;
+            padding: 10px;
+            font-size: 1.5em;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status {
+            font-size: 1.5em;
+            margin: 30px 0;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .status.running {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status.paused {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .github-stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(36, 41, 46, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .github-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-weight: bold;
+        }
+
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .sync-indicator.good {
+            background: #4CAF50;
+        }
+
+        .sync-indicator.warning {
+            background: #FF9800;
+        }
+
+        .sync-indicator.error {
+            background: #f44336;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #ffcccc;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .countdown-mode {
+            color: #FFD700;
+        }
+
+        .time-up {
+            animation: blink 1s infinite;
+            color: #ff6b6b;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .viewer-link {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .viewer-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .viewer-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SessionTimer 管理画面</h1>
+        <div class="github-badge">🚀 GitHub Pages 同期版</div>
+        
+        <!-- セットアップパネル -->
+        <div class="setup-panel" id="setupPanel">
+            <div class="setup-title">🔧 GitHub設定</div>
+            <div class="setup-input">
+                <label>Personal Token:</label>
+                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxx">
+            </div>
+            <button class="btn-setup" onclick="setupGitHub()">接続テスト & 保存</button>
+            <div class="error-message" id="setupError"></div>
+            <p style="margin-top: 10px; font-size: 0.8em; opacity: 0.8;">
+                Repository: iidaatcnt/counselor-sync-timer<br>
+                Personal Access Tokenのみ必要です
+            </p>
+        </div>
+        
+        <!-- メインUI -->
+        <div id="mainUI" class="hidden">
+            <div class="session-info">
+                <div class="info-box">
+                    <div class="info-label">全体残り時間</div>
+                    <div class="info-value" id="totalRemainingDisplay">02:00:00</div>
+                </div>
+                
+                <div class="info-box session-timer">
+                    <div class="info-label">セッション残り時間</div>
+                    <div class="info-value countdown-mode" id="sessionRemainingDisplay">20:00</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn" class="btn-start">開始</button>
+                <button id="pauseBtn" class="btn-pause" disabled>一時停止</button>
+                <button id="nextSessionBtn" class="btn-next" disabled>次のセッション</button>
+                <button id="resetBtn" class="btn-reset">リセット</button>
+            </div>
+            
+            <div class="sound-controls">
+                <button class="sound-button" onclick="testSound()">🔊 音声テスト</button>
+            </div>
+            
+            <div class="time-setting">
+                <h3>⏰ 時間設定</h3>
+                <div class="time-inputs">
+                    <div class="time-input-group">
+                        <label for="totalMinutesInput">全体時間（分）</label>
+                        <input type="number" id="totalMinutesInput" min="1" max="480" value="120">
+                    </div>
+                    <div class="time-input-group">
+                        <label for="sessionMinutesInput">セッション時間（分）</label>
+                        <input type="number" id="sessionMinutesInput" min="1" max="60" value="20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="status" id="statusDisplay">待機中</div>
+            
+            <div class="github-stats">
+                <div class="github-title">📊 GitHub同期状況</div>
+                <div class="stat-row">
+                    <span>Repository:</span>
+                    <span class="stat-value">iidaatcnt/counselor-sync-timer</span>
+                </div>
+                <div class="stat-row">
+                    <span>状態バージョン:</span>
+                    <span class="stat-value" id="stateVersion">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>最終更新:</span>
+                    <span class="stat-value" id="lastUpdateTime">-<span class="sync-indicator good" id="syncIndicator"></span></span>
+                </div>
+                <div class="stat-row">
+                    <span>API使用量:</span>
+                    <span class="stat-value">0回/時間 🎉</span>
+                </div>
+            </div>
+
+            <div class="viewer-link">
+                👥 <a href="index.html">相談員画面はこちら</a> | 
+                📱 <a href="https://iidaatcnt.github.io/counselor-sync-timer/">ライブURL</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="github-sync-client.js"></script>
+    <script>
+        let githubClient = null;
+        
+        // ローカルストレージから設定を読み込み
+        function loadSettings() {
+            const settings = localStorage.getItem('github-timer-admin-settings');
+            if (settings) {
+                const config = JSON.parse(settings);
+                document.getElementById('githubToken').value = config.token || '';
+                
+                if (config.token) {
+                    setupGitHub();
+                }
+            }
+        }
+        
+        // GitHub設定とテスト
+        async function setupGitHub() {
+            const token = document.getElementById('githubToken').value.trim();
+            
+            const errorDiv = document.getElementById('setupError');
+            errorDiv.style.display = 'none';
+            
+            if (!token) {
+                showError('Personal Access Tokenを入力してください');
+                return;
+            }
+            
+            try {
+                // GitHub接続テスト
+                const testResponse = await fetch('https://api.github.com/repos/iidaatcnt/counselor-sync-timer', {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'User-Agent': 'SessionTimer-App'
+                    }
+                });
+                
+                if (!testResponse.ok) {
+                    if (testResponse.status === 404) {
+                        throw new Error('リポジトリが見つかりません。トークンに適切な権限があることを確認してください。');
+                    } else if (testResponse.status === 401) {
+                        throw new Error('認証に失敗しました。Personal Access Tokenを確認してください。');
+                    } else {
+                        throw new Error(`GitHub API エラー: ${testResponse.status}`);
+                    }
+                }
+                
+                // 設定を保存
+                const config = { token };
+                localStorage.setItem('github-timer-admin-settings', JSON.stringify(config));
+                
+                // GitHubクライアントを初期化
+                githubClient = new GitHubSyncClient({
+                    owner: 'iidaatcnt',
+                    repo: 'counselor-sync-timer',
+                    githubToken: token,
+                    isAdmin: true,
+                    pollInterval: 5000 // 5秒間隔
+                });
+                
+                // 状態変更リスナーを登録
+                githubClient.addListener((newState, oldState) => {
+                    updateDisplay();
+                    updateStats();
+                });
+                
+                // UIを切り替え
+                document.getElementById('setupPanel').style.display = 'none';
+                document.getElementById('mainUI').classList.remove('hidden');
+                
+                // イベントリスナーを設定
+                setupEventListeners();
+                
+                // 初期表示
+                updateDisplay();
+                updateStats();
+                
+                console.log('GitHub同期クライアント初期化完了');
+                
+            } catch (error) {
+                console.error('GitHub設定エラー:', error);
+                showError(error.message);
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('setupError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('startBtn').addEventListener('click', startTimer);
+            document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
+            document.getElementById('nextSessionBtn').addEventListener('click', nextSession);
+            document.getElementById('resetBtn').addEventListener('click', resetTimer);
+        }
+        
+        async function startTimer() {
+            if (!githubClient) return;
+            
+            try {
+                const totalMinutes = parseInt(document.getElementById('totalMinutesInput').value) || 120;
+                const sessionMinutes = parseInt(document.getElementById('sessionMinutesInput').value) || 20;
+                
+                if (githubClient.timerState.isPaused) {
+                    await githubClient.resumeTimer();
+                } else {
+                    await githubClient.startTimer(totalMinutes, sessionMinutes);
+                }
+                
+                updateButtonStates();
+            } catch (error) {
+                console.error('開始エラー:', error);
+                alert('タイマー開始に失敗しました: ' + error.message);
+            }
+        }
+        
+        async function pauseTimer() {
+            if (!githubClient) return;
+            
+            try {
+                await githubClient.pauseTimer();
+                updateButtonStates();
+            } catch (error) {
+                console.error('一時停止エラー:', error);
+                alert('一時停止に失敗しました: ' + error.message);
+            }
+        }
+        
+        async function nextSession() {
+            if (!githubClient) return;
+            
+            try {
+                await githubClient.nextSession();
+                updateButtonStates();
+            } catch (error) {
+                console.error('次のセッションエラー:', error);
+                alert('次のセッション開始に失敗しました: ' + error.message);
+            }
+        }
+        
+        async function resetTimer() {
+            if (!githubClient) return;
+            
+            try {
+                const totalMinutes = parseInt(document.getElementById('totalMinutesInput').value) || 120;
+                const sessionMinutes = parseInt(document.getElementById('sessionMinutesInput').value) || 20;
+                
+                await githubClient.resetTimer(totalMinutes, sessionMinutes);
+                updateButtonStates();
+            } catch (error) {
+                console.error('リセットエラー:', error);
+                alert('リセットに失敗しました: ' + error.message);
+            }
+        }
+        
+        function updateDisplay() {
+            if (!githubClient) return;
+            
+            const state = githubClient.getCurrentState();
+            
+            // 時間表示の更新
+            document.getElementById('totalRemainingDisplay').textContent = formatLongTime(state.remainingTotal || 0);
+            document.getElementById('sessionRemainingDisplay').textContent = formatTime(state.remainingSession || 0);
+            
+            // 状態表示の更新
+            if (state.isRunning && !state.isPaused) {
+                document.getElementById('statusDisplay').textContent = '実行中';
+                document.getElementById('statusDisplay').className = 'status running';
+            } else if (state.isPaused) {
+                document.getElementById('statusDisplay').textContent = '一時停止中';
+                document.getElementById('statusDisplay').className = 'status paused';
+            } else {
+                document.getElementById('statusDisplay').textContent = '待機中';
+                document.getElementById('statusDisplay').className = 'status';
+            }
+            
+            // タイムアップの処理
+            const sessionDisplay = document.getElementById('sessionRemainingDisplay');
+            if (state.remainingSession === 0 && state.isRunning) {
+                sessionDisplay.classList.add('time-up');
+            } else {
+                sessionDisplay.classList.remove('time-up');
+            }
+            
+            updateButtonStates();
+        }
+        
+        function updateButtonStates() {
+            if (!githubClient) return;
+            
+            const state = githubClient.timerState;
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const nextSessionBtn = document.getElementById('nextSessionBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const totalMinutesInput = document.getElementById('totalMinutesInput');
+            const sessionMinutesInput = document.getElementById('sessionMinutesInput');
+            
+            if (state.isRunning && !state.isPaused) {
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                nextSessionBtn.disabled = false;
+                resetBtn.disabled = true;
+                totalMinutesInput.disabled = true;
+                sessionMinutesInput.disabled = true;
+            } else if (state.isPaused) {
+                startBtn.disabled = false;
+                startBtn.textContent = '再開';
+                pauseBtn.disabled = true;
+                nextSessionBtn.disabled = true;
+                resetBtn.disabled = false;
+                totalMinutesInput.disabled = true;
+                sessionMinutesInput.disabled = true;
+            } else {
+                startBtn.disabled = false;
+                startBtn.textContent = '開始';
+                pauseBtn.disabled = true;
+                nextSessionBtn.disabled = true;
+                resetBtn.disabled = false;
+                totalMinutesInput.disabled = false;
+                sessionMinutesInput.disabled = false;
+            }
+        }
+        
+        function updateStats() {
+            if (!githubClient) return;
+            
+            const stats = githubClient.getStats();
+            
+            document.getElementById('stateVersion').textContent = `v${stats.version}`;
+            
+            if (stats.lastUpdate) {
+                const date = new Date(stats.lastUpdate);
+                document.getElementById('lastUpdateTime').textContent = date.toLocaleTimeString('ja-JP');
+                
+                const secondsAgo = Math.floor((Date.now() - stats.lastUpdate) / 1000);
+                const indicator = document.getElementById('syncIndicator');
+                
+                if (secondsAgo < 30) {
+                    indicator.className = 'sync-indicator good';
+                } else if (secondsAgo < 120) {
+                    indicator.className = 'sync-indicator warning';
+                } else {
+                    indicator.className = 'sync-indicator error';
+                }
+            }
+        }
+        
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        function formatLongTime(milliseconds) {
+            const totalSeconds = Math.ceil(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+        
+        // リアルタイム表示更新
+        setInterval(() => {
+            if (githubClient) {
+                updateDisplay();
+            }
+        }, 1000);
+        
+        // 統計更新
+        setInterval(() => {
+            if (githubClient) {
+                updateStats();
+            }
+        }, 5000);
+        
+        // 音声テスト機能
+        function testSound() {
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            } catch (error) {
+                console.log('音声再生エラー:', error);
+                alert('音声再生に失敗しました: ' + error.message);
+            }
+        }
+        
+        // 初期化
+        loadSettings();
+    </script>
+</body>
+</html>
